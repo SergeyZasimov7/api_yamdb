@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Categorie, Genre, Title
+from reviews.models import Categorie, Genre, Title
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -45,3 +45,18 @@ class ReadOnlyTitleSerializer(serializers.ModelSerializer):
         model = Title
         fields = '__all__'
         read_only_fields = ('__all__',)
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор Юзера"""
+    pass
+
+
+class SignUpSerializer(serializers.Serializer):
+    """Сериализатор для создания учетки"""
+    pass
+
+
+class TokenSerializer(serializers.Serializer):
+    """Сериализатор для токена"""
+    pass

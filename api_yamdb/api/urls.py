@@ -5,13 +5,18 @@ from .views import (
     CategoryViewSet,
     GenreViewSet,
     TitleViewSet,
-    
+    UserViewSet,
 )
 
 app_name = 'api'
 
 router_v1 = DefaultRouter()
 
+router_v1.register(
+    'users',
+    UserViewSet,
+    basename='users'
+)
 
 router_v1.register(
     'categories',
@@ -28,5 +33,4 @@ router_v1.register(
 
 urlpatterns = [
     path('v1/', include(router_v1.urls)),
-   
 ]
