@@ -25,3 +25,11 @@ class IsAdminOrReadOnly(permissions.BasePermission):
                 or (request.user.is_authenticated and (
                     request.user.is_admin
                     or request.user.is_superuser)))
+
+
+class IsAdminOrSuperuser(permissions.BasePermission):
+    """
+    Разрешение для доступа только администраторам или суперпользователям.
+    """
+    def has_permission(self, request, view):
+        return request.user.is_superuser or request.user.is_admin

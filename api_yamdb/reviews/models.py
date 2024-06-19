@@ -19,7 +19,7 @@ class User(AbstractUser):
         max_length=150,
         verbose_name='Имя',
         unique=True,
-        validators=[RegexValidator(r'^[\w.@+-]+$')]
+        validators=[RegexValidator(r'^[\w.@+-]+\Z')]
     )
     email = models.EmailField(
         max_length=254,
