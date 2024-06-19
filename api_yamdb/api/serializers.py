@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from reviews.models import Categorie, Genre, Title
+from reviews.models import Categorie, Genre, Title, User
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -49,7 +49,9 @@ class ReadOnlyTitleSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор Юзера"""
-    pass
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
 
 
 class SignUpSerializer(serializers.Serializer):
@@ -60,3 +62,10 @@ class SignUpSerializer(serializers.Serializer):
 class TokenSerializer(serializers.Serializer):
     """Сериализатор для токена"""
     pass
+
+
+class UserMeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+        read_only_fields = ['role'] 
