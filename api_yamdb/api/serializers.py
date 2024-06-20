@@ -54,11 +54,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
 
 
-class SignUpSerializer(serializers.Serializer):
-    """Сериализатор для создания учетки"""
-    pass
-
-
 class TokenSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
     confirmation_code = serializers.IntegerField(required=True)
