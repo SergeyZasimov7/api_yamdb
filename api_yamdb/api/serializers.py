@@ -62,31 +62,8 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class TokenSerializer(serializers.Serializer):
-    """Сериализатор для  токена."""
-    username = serializers.CharField(required=True)
-    confirmation_code = serializers.IntegerField(required=True)
-
-    def validate(self, data):
-        """
-        Валидация, проверяющая, что пользователь существует,
-        и код подтверждения корректный.
-        """
-        username = data['username']
-        confirmation_code = data['confirmation_code']
-
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            raise serializers.ValidationError(
-                "Пользователь с таким именем не найден."
-            )
-
-        if not user.confirmation_code == confirmation_code:
-            raise serializers.ValidationError(
-                "Код подтверждения неверен."
-            )
-
-        return data
+    """Сериализатор для токена"""
+    pass
 
 
 class UserMeSerializer(serializers.ModelSerializer):
