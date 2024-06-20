@@ -21,6 +21,7 @@ class User(AbstractUser):
         unique=True,
         validators=[RegexValidator(r'^[\w.@+-]+\Z')]
     )
+    confirmation_code = models.CharField(max_length=6, blank=True)
     email = models.EmailField(
         max_length=254,
         verbose_name='email',

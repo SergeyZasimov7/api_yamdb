@@ -1,3 +1,6 @@
+import random
+import string
+from django.core.mail import send_mail
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, viewsets, status, filters
 from rest_framework.decorators import action
@@ -5,6 +8,7 @@ from rest_framework.generics import RetrieveUpdateAPIView, RetrieveAPIView
 from rest_framework.mixins import DestroyModelMixin
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
 
 
@@ -20,33 +24,71 @@ from .serializers import (
     TitleSerializer,
     UserSerializer,
     ReadOnlyTitleSerializer,
-    UserMeSerializer
+    UserMeSerializer,
+    TokenSerializer
 )
 
 from .filters import TitleFilter
 from .mixins import ListCreateDestroyViewSet
 
 
+class TokenObtainPairView(TokenObtainPairView):
+    serializer_class = TokenSerializer
+
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        confirmation_code = request.data.get('confirmation_code')
+
+        if not username or not confirmation_code:
+            return Response(
+                {'error': 'Username and confirmation code are required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'User does not exist.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if user.confirmation_code != confirmation_code:
+            return Response(
+                {'error': 'Invalid confirmation code.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+
+def generate_confirmation_code(length=6):
+    return ''.join(random.choices(
+        string.ascii_uppercase + string.digits, k=length
+    ))
+
+
 class UserRegistrationView(APIView):
-    """
-    Представление для регистрации нового пользователя.
-    """
     permission_classes = [AllowAny]
 
     def post(self, request):
-        """
-        Регистрирует нового пользователя.
-        """
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            # Проверка username
             if request.data.get('username') == 'me':
                 return Response(
                     {'error': 'Username "me" is not allowed'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
+            confirmation_code = generate_confirmation_code()
+            user = serializer.save(confirmation_code=confirmation_code)
+            subject = 'Код подтверждения регистрации'
+            message = f'Ваш код подтверждения: {confirmation_code}'
+            from_email = 'email@example.com'
+            recipient_list = [user.email]
+            send_mail(subject, message, from_email, recipient_list)
 
-            user = serializer.save()
             return Response(
                 {'username': user.username, 'email': user.email},
                 status=status.HTTP_200_OK
