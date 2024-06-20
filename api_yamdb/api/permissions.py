@@ -2,7 +2,7 @@ from rest_framework import permissions
 
 
 class IsAdmin(permissions.BasePermission):
-    """Класс проверки доступа для админа и суперюзера"""
+    """Класс проверки доступа для админа и суперюзера."""
 
     def has_permission(self, request, view):
         return (
@@ -28,8 +28,6 @@ class IsAdminOrReadOnly(permissions.BasePermission):
 
 
 class IsAdminOrSuperuser(permissions.BasePermission):
-    """
-    Разрешение для доступа только администраторам или суперпользователям.
-    """
+    """Разрешение для доступа только администраторам или суперпользователям."""
     def has_permission(self, request, view):
         return request.user.is_superuser or request.user.is_admin

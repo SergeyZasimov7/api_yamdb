@@ -7,4 +7,8 @@ class ListCreateDestroyViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
+    """
+    Набор миксинов, который предоставляет действия:
+    "перечислить", "создать" и "удалить".
+    """
     pass

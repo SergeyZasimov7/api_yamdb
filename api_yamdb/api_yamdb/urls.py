@@ -17,9 +17,6 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import TemplateView
 
-from api.views import (
-    UserRegistrationView, UserMeView, UserByUsernameView, UserListView
-)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,8 +26,4 @@ urlpatterns = [
         TemplateView.as_view(template_name='redoc.html'),
         name='redoc'
     ),
-    path('api/v1/auth/signup/', UserRegistrationView.as_view(), name='signup'),
-    path('api/v1/users/me/', UserMeView.as_view(), name='user_me'),
-    path('api/v1/users/<str:username>/', UserByUsernameView.as_view(), name='user_by_username'),
-    path('api/v1/users/', UserListView.as_view(), name='user_list'),
 ]

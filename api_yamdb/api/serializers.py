@@ -4,6 +4,7 @@ from reviews.models import Categorie, Genre, Title, User
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Categorie."""
 
     class Meta:
         model = Categorie
@@ -12,6 +13,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class GenreSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Genre."""
 
     class Meta:
         model = Genre
@@ -20,6 +22,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Title."""
     genre = serializers.SlugRelatedField(
         slug_field='slug',
         many=True,
@@ -37,6 +40,10 @@ class TitleSerializer(serializers.ModelSerializer):
 
 
 class ReadOnlyTitleSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для модели Title с дополнительным полем 'rating'.
+    Используется для чтения данных.
+    """
     rating = serializers.IntegerField(read_only=True)
     genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
@@ -48,23 +55,45 @@ class ReadOnlyTitleSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Сериализатор Юзера"""
+    """Сериализатор для модели User."""
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
 
 
-class SignUpSerializer(serializers.Serializer):
-    """Сериализатор для создания учетки"""
-    pass
-
-
 class TokenSerializer(serializers.Serializer):
-    """Сериализатор для токена"""
-    pass
+    """Сериализатор для  токена."""
+    username = serializers.CharField(required=True)
+    confirmation_code = serializers.IntegerField(required=True)
+
+    def validate(self, data):
+        """
+        Валидация, проверяющая, что пользователь существует,
+        и код подтверждения корректный.
+        """
+        username = data['username']
+        confirmation_code = data['confirmation_code']
+
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                "Пользователь с таким именем не найден."
+            )
+
+        if not user.confirmation_code == confirmation_code:
+            raise serializers.ValidationError(
+                "Код подтверждения неверен."
+            )
+
+        return data
 
 
 class UserMeSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для модели User,
+    используемый для редактирования данных текущего пользователя.
+    """
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')

@@ -4,6 +4,7 @@ from reviews.models import Title
 
 
 class TitleFilter(FilterSet):
+    """Фильтр для объектов Title."""
     name = CharFilter(
         field_name='name',
         lookup_expr='icontains'
