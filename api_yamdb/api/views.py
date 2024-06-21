@@ -5,7 +5,7 @@ from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, viewsets, status, filters
+from rest_framework import generics, viewsets, status, filters, mixins
 from rest_framework.decorators import action
 from rest_framework.generics import RetrieveUpdateAPIView, RetrieveAPIView
 from rest_framework.mixins import DestroyModelMixin
@@ -17,6 +17,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
+
 from .permissions import (
     IsAdmin,
     IsAdminOrReadOnly,
@@ -24,20 +25,19 @@ from .permissions import (
 )
 
 from reviews.models import Categorie, Genre, Title, Review, User
-from .decorators import put_method_not_allowed
+from reviews.constans import аllowed_requests
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
     GenreSerializer,
     TitleSerializer,
     TokenSerializer,
-    ReadOnlyTitleSerializer,
+    ReadTitleSerializer,
     ReviewSerializer,
     UserMeSerializer,
     UserSerializer
 )
 from .filters import TitleFilter
-from .mixins import ListCreateDestroyViewSet
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -249,24 +249,32 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class CategoryViewSet(ListCreateDestroyViewSet):
+class BaseCategoryGenreViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    """
+    Базовый набор миксинов, который предоставляет действия:
+    "перечислить", "создать" и "удалить".
+    """
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
+
+
+class CategoryViewSet(BaseCategoryGenreViewSet):
     """ViewSet для категорий."""
     queryset = Categorie.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
-    lookup_field = 'slug'
 
 
-class GenreViewSet(ListCreateDestroyViewSet):
+class GenreViewSet(BaseCategoryGenreViewSet):
     """ViewSet для жанров."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
-    lookup_field = 'slug'
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -278,17 +286,13 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = TitleSerializer
     filterset_class = TitleFilter
     filter_backends = [DjangoFilterBackend]
+    http_method_names = аllowed_requests
 
     def get_serializer_class(self):
         """Метод определения класса сериализатора."""
         if self.action in ('retrieve', 'list'):
-            return ReadOnlyTitleSerializer
+            return ReadTitleSerializer
         return TitleSerializer
-
-    @put_method_not_allowed
-    def update(self, request, *args, **kwargs):
-        """Метод обновления записи о произведении."""
-        return super().update(request, *args, **kwargs)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -296,6 +300,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly, ThisAuthorOrReadOnly]
     serializer_class = ReviewSerializer
     pagination_class = LimitOffsetPagination
+    http_method_names = аllowed_requests
 
     def get_post_object(self):
         """Возвращает объект Title c id из запроса."""
@@ -312,17 +317,13 @@ class ReviewViewSet(viewsets.ModelViewSet):
             author=self.request.user,
             title=self.get_post_object())
 
-    @put_method_not_allowed
-    def update(self, request, *args, **kwargs):
-        """Метод обновления отзыва."""
-        return super().update(request, *args, **kwargs)
-
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Обрабатывает API запросы к моделе Comment."""
     permission_classes = [IsAuthenticatedOrReadOnly, ThisAuthorOrReadOnly]
     serializer_class = CommentSerializer
     pagination_class = LimitOffsetPagination
+    http_method_names = аllowed_requests
 
     def get_post_object(self):
         """Возвращает объект Post c id из запроса."""
@@ -338,8 +339,3 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(
             author=self.request.user,
             review=self.get_post_object())
-
-    @put_method_not_allowed
-    def update(self, request, *args, **kwargs):
-        """Метод обновления комментария."""
-        return super().update(request, *args, **kwargs)

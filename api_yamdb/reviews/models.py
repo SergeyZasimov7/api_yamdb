@@ -1,30 +1,28 @@
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import RegexValidator
 from django.db import models
-from django.utils.translation import gettext_lazy
 
-from .validators import validate_year
+from .validators import validate_year, validate_username
+from .constans import name_length
 
 
 class User(AbstractUser):
     """Модель класса User унаследованная от AbstractUser"""
 
     class Role(models.TextChoices):
-        USER = 'user', gettext_lazy('Пользователь')
-        MODERATOR = 'moderator', gettext_lazy('Модератор')
-        ADMIN = 'admin', gettext_lazy('Администратор')
-        SUPERUSER = 'superuser', gettext_lazy('Суперюзер')
+        USER = 'user'
+        MODERATOR = 'moderator'
+        ADMIN = 'admin'
 
     username = models.CharField(
-        max_length=150,
+        max_length=name_length,
         verbose_name='Имя',
         unique=True,
-        validators=[RegexValidator(r'^[\w.@+-]+\Z')]
+        validators=[validate_username]
     )
     confirmation_code = models.CharField(max_length=6, blank=True)
     email = models.EmailField(
         max_length=254,
-        verbose_name='email',
+        verbose_name='Почта',
         unique=True
     )
     bio = models.TextField(
@@ -32,7 +30,7 @@ class User(AbstractUser):
         blank=True,
     )
     role = models.CharField(
-        max_length=40,
+        max_length=max(len(role) for role, _ in Role.choices),
         verbose_name='Роль',
         choices=Role.choices,
         default=Role.USER,
@@ -41,53 +39,45 @@ class User(AbstractUser):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-        ordering = ['id']
+        ordering = ['username']
 
     @property
     def is_admin(self):
-        return self.role == self.Role.ADMIN
+        return self.role == self.Role.ADMIN or self.is_staff
 
     @property
     def is_moderator(self):
         return self.role == self.Role.MODERATOR
 
 
-class Categorie(models.Model):
+class BaseCategoryGenre(models.Model):
+    """Базовый класс для категорий и жанров."""
+    name = models.CharField(
+        verbose_name='название',
+        max_length=256
+    )
+    slug = models.SlugField(
+        verbose_name='slug',
+        max_length=50,
+        unique=True
+    )
+
+    class Meta:
+        abstract = True
+        ordering = ('name',)
+
+    def __str__(self):
+        return self.name
+
+
+class Categorie(BaseCategoryGenre):
     """Модель для категорий."""
-    name = models.CharField(
-        verbose_name='название',
-        max_length=256
-    )
-    slug = models.SlugField(
-        verbose_name='slug',
-        max_length=50,
-        unique=True
-    )
-
-    class Meta:
-        ordering = ['name']
-
-    def __str__(self):
-        return self.name
+    pass
 
 
-class Genre(models.Model):
+class Genre(BaseCategoryGenre):
     """Модель для жанров."""
-    name = models.CharField(
-        verbose_name='название',
-        max_length=256
-    )
-    slug = models.SlugField(
-        verbose_name='slug',
-        max_length=50,
-        unique=True
-    )
-
-    class Meta:
-        ordering = ['name']
-
-    def __str__(self):
-        return self.name
+    pass
 
 
 class Title(models.Model):
@@ -110,12 +100,14 @@ class Title(models.Model):
     genre = models.ManyToManyField(
         Genre,
         verbose_name='жанр',
+        related_name='titles'
     )
     category = models.ForeignKey(
         Categorie,
         verbose_name='категория',
         on_delete=models.SET_NULL,
-        null=True
+        null=True,
+        related_name='titles'
     )
 
     class Meta:

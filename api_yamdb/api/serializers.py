@@ -39,7 +39,7 @@ class TitleSerializer(serializers.ModelSerializer):
                   'category')
 
 
-class ReadOnlyTitleSerializer(serializers.ModelSerializer):
+class ReadTitleSerializer(serializers.ModelSerializer):
     """
     Сериализатор для модели Title с дополнительным полем 'rating'.
     Используется для чтения данных.
@@ -50,7 +50,8 @@ class ReadOnlyTitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = '__all__'
+        fields = ('id', 'name', 'year', 'description',
+                  'genre', 'category', 'rating')
         read_only_fields = ('__all__',)
 
 
