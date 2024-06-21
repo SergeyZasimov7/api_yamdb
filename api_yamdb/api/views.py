@@ -21,7 +21,7 @@ from rest_framework.views import APIView
 from .permissions import (
     IsAdmin,
     IsAdminOrReadOnly,
-    ThisAuthorOrReadOnly
+    AuthorOrReadOnly
 )
 
 from reviews.models import Categorie, Genre, Title, Review, User
@@ -46,37 +46,12 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         """Метод обработки POST запроса."""
-        username = request.data.get('username')
-        confirmation_code = request.data.get('confirmation_code')
-        if not username or not confirmation_code:
-            return Response(
-                {'error': 'Username and confirmation code are required.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            return Response(
-                {'error': 'User does not exist.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        if user.confirmation_code != confirmation_code:
-            return Response(
-                {'error': 'Invalid confirmation code.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        token = self.get_token(user)
+        self.get_serializer(data=request.data).is_valid(raise_exception=True)
+        token = RefreshToken.for_user(User.objects.get(username=request.data.get('username')))
         return Response(
             {'token': str(token.access_token)},
             status=status.HTTP_200_OK
         )
-
-    def get_token(self, user):
-        """Метод для обновления токена."""
-        refresh = RefreshToken.for_user(user)
-        return refresh
 
 
 def generate_confirmation_code(length=6):
@@ -297,7 +272,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Обрабатывает API запросы к моделе Review."""
-    permission_classes = [IsAuthenticatedOrReadOnly, ThisAuthorOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, AuthorOrReadOnly]
     serializer_class = ReviewSerializer
     pagination_class = LimitOffsetPagination
     http_method_names = аllowed_requests
@@ -320,7 +295,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Обрабатывает API запросы к моделе Comment."""
-    permission_classes = [IsAuthenticatedOrReadOnly, ThisAuthorOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, AuthorOrReadOnly]
     serializer_class = CommentSerializer
     pagination_class = LimitOffsetPagination
     http_method_names = аllowed_requests

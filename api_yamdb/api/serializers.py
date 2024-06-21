@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from reviews.models import Categorie, Comment, Genre, Title, Review, User
@@ -78,12 +79,7 @@ class TokenSerializer(serializers.Serializer):
         username = data['username']
         confirmation_code = data['confirmation_code']
 
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            raise serializers.ValidationError(
-                "Пользователь с таким именем не найден."
-            )
+        user = get_object_or_404(User, username=username)
 
         if not user.confirmation_code == confirmation_code:
             raise serializers.ValidationError(
