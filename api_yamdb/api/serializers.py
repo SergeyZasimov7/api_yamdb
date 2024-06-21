@@ -112,26 +112,18 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('id', 'text', 'author', 'score', 'pub_date')
         model = Review
-        read_only_fields = ('author', 'title')
-
-    def validate_score(self, value):
-        """Проверка диапазона оценки."""
-        if not (1 <= value <= 10):
-            raise serializers.ValidationError(
-                'Оценка выставляется от 1 до 10!'
-            )
-        return value
 
     def validate(self, request):
         """Проверка отзыва."""
-        if self.context['request'].method != "PATCH":
-            author = self.context['request'].user
-            title = (
-                self.context['request'].parser_context['kwargs']['title_id']
-            )
-            if Review.objects.filter(author=author, title=title):
-                raise serializers.ValidationError(
-                    'Пользователь может оставлять только один отзыв!')
+        if self.context['request'].method == "PATCH":
+            return request
+        author = self.context['request'].user
+        title = (
+            self.context['request'].parser_context['kwargs']['title_id']
+        )
+        if Review.objects.filter(author=author, title=title):
+            raise serializers.ValidationError(
+                'Пользователь может оставлять только один отзыв!')
         return request
 
 
@@ -144,4 +136,3 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('id', 'text', 'author', 'pub_date')
         model = Comment
-        read_only_fields = ('author', 'review')

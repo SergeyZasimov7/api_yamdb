@@ -1,2 +1,5 @@
-name_length = 150
-аllowed_requests = ['get', 'post', 'patch', 'delete']
+NAME_LENGTH = 150
+ALLOWED_REQUESTS = ['get', 'post', 'patch', 'delete']
+MIN_SCORE = 1
+MAX_SCORE = 10
+SLICE_NAME_OBJECT = 15

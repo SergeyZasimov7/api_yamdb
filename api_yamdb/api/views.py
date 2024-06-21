@@ -21,11 +21,11 @@ from rest_framework.views import APIView
 from .permissions import (
     IsAdmin,
     IsAdminOrReadOnly,
-    ThisAuthorOrReadOnly
+    IsAuthorOrReadOnly
 )
 
 from reviews.models import Categorie, Genre, Title, Review, User
-from reviews.constans import аllowed_requests
+from reviews.constans import ALLOWED_REQUESTS
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -261,7 +261,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = TitleSerializer
     filterset_class = TitleFilter
     filter_backends = [DjangoFilterBackend]
-    http_method_names = аllowed_requests
+    http_method_names = ALLOWED_REQUESTS
 
     def get_serializer_class(self):
         """Метод определения класса сериализатора."""
@@ -272,37 +272,37 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Обрабатывает API запросы к моделе Review."""
-    permission_classes = [IsAuthenticatedOrReadOnly, ThisAuthorOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
     serializer_class = ReviewSerializer
     pagination_class = LimitOffsetPagination
-    http_method_names = аllowed_requests
+    http_method_names = ALLOWED_REQUESTS
 
-    def get_post_object(self):
+    def get_post(self):
         """Возвращает объект Title c id из запроса."""
-        title_id = self.kwargs.get('title_id')
+        title_id = self.kwargs['title_id']
         return get_object_or_404(Title, id=title_id)
 
     def get_queryset(self):
         """Переопределение функции возврата списка отзывов."""
-        return self.get_post_object().reviews.all()
+        return self.get_post().reviews.all()
 
     def perform_create(self, serializer):
         """Переопределение функции создания отзыва."""
         serializer.save(
             author=self.request.user,
-            title=self.get_post_object())
+            title=self.get_post())
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Обрабатывает API запросы к моделе Comment."""
-    permission_classes = [IsAuthenticatedOrReadOnly, ThisAuthorOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
     serializer_class = CommentSerializer
     pagination_class = LimitOffsetPagination
-    http_method_names = аllowed_requests
+    http_method_names = ALLOWED_REQUESTS
 
     def get_post_object(self):
         """Возвращает объект Post c id из запроса."""
-        review_id = self.kwargs.get('review_id')
+        review_id = self.kwargs['review_id']
         return get_object_or_404(Review, id=review_id)
 
     def get_queryset(self):
