@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from reviews.models import Categorie, Genre, Title, User
+from reviews.models import Categorie, Comment, Genre, Title, Review, User
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -100,3 +100,44 @@ class UserMeSerializer(serializers.ModelSerializer):
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
         )
         read_only_fields = ['role']
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    """Сериализатор модели Review."""
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username',
+        default=serializers.CurrentUserDefault()
+    )
+
+    class Meta:
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
+        model = Review
+        read_only_fields = ('author', 'title')
+
+    def validate_score(self, value):
+        if not (1 <= value <= 10):
+            raise serializers.ValidationError(
+                'Оценка выставляется от 1 до 10!'
+            )
+        return value
+
+    def validate(self, request):
+        if self.context['request'].method != "PATCH":
+            author = self.context['request'].user
+            title = self.context['request'].parser_context['kwargs']['title_id']
+            if Review.objects.filter(author=author, title=title):
+                raise serializers.ValidationError(
+                    'Пользователь может оставлять только один отзыв!')
+        return request
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    """Сериализатор модели Comment."""
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username'
+    )
+
+    class Meta:
+        fields = ('id', 'text', 'author', 'pub_date')
+        model = Comment
+        read_only_fields = ('author', 'review')

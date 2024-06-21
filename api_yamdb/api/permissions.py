@@ -31,3 +31,18 @@ class IsAdminOrSuperuser(permissions.BasePermission):
     """Разрешение для доступа только администраторам или суперпользователям."""
     def has_permission(self, request, view):
         return request.user.is_superuser or request.user.is_admin
+
+
+class ThisAuthorOrReadOnly(permissions.BasePermission):
+    """Класс разрешений."""
+
+    def has_object_permission(self, request, view, obj):
+        """
+        Метод разрешений.
+
+        Метод определяет разрешения на уровне объекта.
+        """
+        return (
+            request.method in permissions.SAFE_METHODS
+            or obj.author == request.user
+        )

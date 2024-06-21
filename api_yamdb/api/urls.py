@@ -3,9 +3,11 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     CategoryViewSet,
+    CommentViewSet,
     GenreViewSet,
     TitleViewSet,
     TokenObtainPairView,
+    ReviewViewSet,
     UserViewSet,
     UserRegistrationView,
     UserMeView,
@@ -36,6 +38,12 @@ router_v1.register(
     'titles',
     TitleViewSet
 )
+router_v1.register(r'titles/(?P<title_id>\d+)/reviews',
+                   ReviewViewSet,
+                   basename='title-reviews')
+router_v1.register(r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
+                   CommentViewSet,
+                   basename='review-comments')
 
 urlpatterns = [
     path('v1/auth/token/', TokenObtainPairView.as_view(),

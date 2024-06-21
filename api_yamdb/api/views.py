@@ -1,12 +1,14 @@
 import random
 import string
 from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.generics import RetrieveUpdateAPIView, RetrieveAPIView
 from rest_framework.mixins import DestroyModelMixin
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -14,15 +16,18 @@ from rest_framework.views import APIView
 from .permissions import (
     IsAdmin,
     IsAdminOrReadOnly,
-    IsAdminOrSuperuser
+    IsAdminOrSuperuser,
+    ThisAuthorOrReadOnly
 )
-from reviews.models import Categorie, Genre, Title, User
+from reviews.models import Categorie, Genre, Title, Review, User
 from .serializers import (
     CategorySerializer,
+    CommentSerializer,
     GenreSerializer,
     TitleSerializer,
     UserSerializer,
     ReadOnlyTitleSerializer,
+    ReviewSerializer,
     UserMeSerializer,
     TokenSerializer
 )
@@ -303,3 +308,51 @@ class TitleViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         """Метод обновления записи о произведении."""
         return super().update(request, *args, **kwargs)
+    
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    """Обрабатывает API запросы к моделе Review."""
+    permission_classes = [IsAuthenticatedOrReadOnly, ThisAuthorOrReadOnly]
+
+    serializer_class = ReviewSerializer
+    pagination_class = LimitOffsetPagination
+    http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def get_post_object(self):
+        """Возвращает объект Title c id из запроса."""
+        title_id = self.kwargs.get('title_id')
+        return get_object_or_404(Title, id=title_id)
+
+    def get_queryset(self):
+        """Переопределение функции возврата списка отзывов."""
+        return self.get_post_object().reviews.all()
+
+    def perform_create(self, serializer):
+        """Переопределение функции создания отзыва."""
+        serializer.save(
+            author=self.request.user,
+            title=self.get_post_object())
+        
+
+class CommentViewSet(viewsets.ModelViewSet):
+    """Обрабатывает API запросы к моделе Comment."""
+    permission_classes = [IsAuthenticatedOrReadOnly, ThisAuthorOrReadOnly]
+
+    serializer_class = CommentSerializer
+    pagination_class = LimitOffsetPagination
+    http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def get_post_object(self):
+        """Возвращает объект Post c id из запроса."""
+        review_id = self.kwargs.get('review_id')
+        return get_object_or_404(Review, id=review_id)
+
+    def get_queryset(self):
+        """Переопределение функции возврата списка комментариев."""
+        return self.get_post_object().comments.all()
+
+    def perform_create(self, serializer):
+        """Переопределение функции создания комментария."""
+        serializer.save(
+            author=self.request.user,
+            review=self.get_post_object())
