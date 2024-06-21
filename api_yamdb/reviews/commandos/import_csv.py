@@ -10,9 +10,9 @@ from reviews.models import (
     Comment,
     Genre,
     Review,
-    Title
+    Title,
+    User
 )
-from reviews.models import User
 
 
 ThroughModel = Title.genre.through
