@@ -38,7 +38,7 @@ pip install -r requirements.txt
 python manage.py migrate
 ```
  **Добавление данных из файлов csv**
-Находясь в директории с файлом manage.py прописать команду:
+_Находясь в директории с файлом manage.py прописать команду:_
 ```
 python manage.py import_csv
 ```
