@@ -1,14 +1,11 @@
 import random
-import string
 
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, viewsets, status, filters, mixins
+from rest_framework import viewsets, status, filters, mixins
 from rest_framework.decorators import action
-from rest_framework.generics import RetrieveUpdateAPIView, RetrieveAPIView
-from rest_framework.mixins import DestroyModelMixin
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import (
     AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
