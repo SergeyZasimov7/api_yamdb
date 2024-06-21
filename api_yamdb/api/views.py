@@ -1,6 +1,7 @@
 import random
 import string
 from django.core.mail import send_mail
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, viewsets, status, filters
@@ -19,7 +20,9 @@ from .permissions import (
     IsAdminOrSuperuser,
     ThisAuthorOrReadOnly
 )
+
 from reviews.models import Categorie, Genre, Title, Review, User
+from .decorators import put_method_not_allowed
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -274,25 +277,28 @@ class GenreViewSet(ListCreateDestroyViewSet):
 #         if self.action in ('retrieve', 'list'):
 #             return ReadOnlyTitleSerializer
 #         return TitleSerializer
-from functools import wraps
-from rest_framework.response import Response
-from rest_framework import status
+    
+
+# from functools import wraps
+# from rest_framework.response import Response
+# from rest_framework import status
 
 
-def put_method_not_allowed(view_func):
-    """Декоратор запрета PUT запроса."""
-    @wraps(view_func)
-    def _wrapped_view(self, request, *args, **kwargs):
-        """Функция проверки запроса."""
-        if request.method == 'PUT':
-            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        return view_func(self, request, *args, **kwargs)
-    return _wrapped_view
+# def put_method_not_allowed(view_func):
+#     """Декоратор запрета PUT запроса."""
+#     @wraps(view_func)
+#     def _wrapped_view(self, request, *args, **kwargs):
+#         """Функция проверки запроса."""
+#         if request.method == 'PUT':
+#             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+#         return view_func(self, request, *args, **kwargs)
+#     return _wrapped_view
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     """ViewSet для произведений."""
-    queryset = Title.objects.all().order_by('name')
+    # queryset = Title.objects.all().order_by('name')
+    queryset = Title.objects.all().annotate(rating=Avg('reviews__score')).order_by('name')
     permission_classes = (IsAdminOrReadOnly,)
     serializer_class = TitleSerializer
     filterset_class = TitleFilter
@@ -316,7 +322,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     serializer_class = ReviewSerializer
     pagination_class = LimitOffsetPagination
-    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_post_object(self):
         """Возвращает объект Title c id из запроса."""
@@ -332,6 +337,11 @@ class ReviewViewSet(viewsets.ModelViewSet):
         serializer.save(
             author=self.request.user,
             title=self.get_post_object())
+    
+    @put_method_not_allowed
+    def update(self, request, *args, **kwargs):
+        """Метод обновления отзыва."""
+        return super().update(request, *args, **kwargs)
         
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -340,7 +350,6 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     serializer_class = CommentSerializer
     pagination_class = LimitOffsetPagination
-    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_post_object(self):
         """Возвращает объект Post c id из запроса."""
@@ -356,3 +365,8 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(
             author=self.request.user,
             review=self.get_post_object())
+        
+    @put_method_not_allowed
+    def update(self, request, *args, **kwargs):
+        """Метод обновления отзыва."""
+        return super().update(request, *args, **kwargs)

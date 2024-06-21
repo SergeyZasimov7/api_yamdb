@@ -64,7 +64,7 @@ class UserSerializer(serializers.ModelSerializer):
 class TokenSerializer(serializers.Serializer):
     """Сериализатор для токена"""
     username = serializers.CharField(required=True)
-    confirmation_code = serializers.IntegerField(required=True)
+    confirmation_code = serializers.CharField(required=True)
 
     def validate(self, data):
         """
