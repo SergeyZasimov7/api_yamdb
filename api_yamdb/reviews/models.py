@@ -116,7 +116,7 @@ class Title(models.Model):
 
     def __str__(self):
         return self.name
-    
+
 
 class BaseModel(models.Model):
     """Базовый класс для моделей отзывов и комментариев."""
@@ -129,7 +129,6 @@ class BaseModel(models.Model):
     class Meta:
         abstract = True
         ordering = ('text',)
-
 
 
 class Review(BaseModel):
