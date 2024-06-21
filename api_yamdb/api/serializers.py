@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
+from reviews.constans import NAME_LENGTH, CONFIRMATION_CODE_LENGTH
 from reviews.models import Categorie, Comment, Genre, Title, Review, User
 
 
@@ -68,8 +69,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 class TokenSerializer(serializers.Serializer):
     """Сериализатор для токена"""
-    username = serializers.CharField(required=True)
-    confirmation_code = serializers.CharField(required=True)
+    username = serializers.CharField(required=True, max_length=NAME_LENGTH)
+    confirmation_code = serializers.CharField(
+        required=True,
+        max_length=CONFIRMATION_CODE_LENGTH
+    )
 
     def validate(self, data):
         """
@@ -78,28 +82,14 @@ class TokenSerializer(serializers.Serializer):
         """
         username = data['username']
         confirmation_code = data['confirmation_code']
-
         user = get_object_or_404(User, username=username)
-
         if not user.confirmation_code == confirmation_code:
             raise serializers.ValidationError(
                 "Код подтверждения неверен."
             )
-
+        user.confirmation_code = None
+        user.save()
         return data
-
-
-class UserMeSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для модели User,
-    используемый для редактирования данных текущего пользователя.
-    """
-    class Meta:
-        model = User
-        fields = (
-            'username', 'email', 'first_name', 'last_name', 'bio', 'role'
-        )
-        read_only_fields = ['role']
 
 
 class ReviewSerializer(serializers.ModelSerializer):

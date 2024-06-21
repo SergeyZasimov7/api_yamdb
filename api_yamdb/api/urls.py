@@ -6,10 +6,8 @@ from .views import (
     CommentViewSet,
     GenreViewSet,
     TitleViewSet,
-    MyTokenObtainPairView,
+    SlidingTokenObtainView,
     ReviewViewSet,
-    UserByUsernameView,
-    UserMeView,
     UserRegistrationView,
     UserViewSet
 )
@@ -30,16 +28,12 @@ router_v1.register(
     CommentViewSet, basename='review-comments'
 )
 auth_urls = [
-    path('v1/auth/token/', MyTokenObtainPairView.as_view(),
+    path('v1/auth/token/', SlidingTokenObtainView.as_view(),
          name='token_obtain_pair'),
     path('v1/auth/signup/', UserRegistrationView.as_view(), name='signup'),
 ]
 
 urlpatterns = [
     *auth_urls,
-    path('v1/users/me/', UserMeView.as_view(), name='user_me'),
-    path('v1/users/me/', UserMeView.as_view(), name='user_me'),
-    path('v1/users/<str:username>/', UserByUsernameView.as_view(),
-         name='user_by_username'),
     path('v1/', include(router_v1.urls)),
 ]

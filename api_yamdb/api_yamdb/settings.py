@@ -1,3 +1,4 @@
+import string
 from pathlib import Path
 
 
@@ -122,3 +123,6 @@ REST_FRAMEWORK = {
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
+
+CONFIRMATION_CODE_LENGTH = 6
+CONFIRMATION_CODE_ALLOWED_CHARS = string.ascii_uppercase + string.digits

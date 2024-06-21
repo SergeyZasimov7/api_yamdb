@@ -25,7 +25,11 @@ from .permissions import (
 )
 
 from reviews.models import Categorie, Genre, Title, Review, User
-from reviews.constans import ALLOWED_REQUESTS
+from reviews.constans import ALLOWED_REQUESTS, PATH, MAIL
+from api_yamdb.settings import (
+    CONFIRMATION_CODE_ALLOWED_CHARS,
+    CONFIRMATION_CODE_LENGTH
+)
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -34,30 +38,31 @@ from .serializers import (
     TokenSerializer,
     ReadTitleSerializer,
     ReviewSerializer,
-    UserMeSerializer,
     UserSerializer
 )
 from .filters import TitleFilter
 
 
-class MyTokenObtainPairView(TokenObtainPairView):
+class SlidingTokenObtainView(TokenObtainPairView):
     """View для получения токена."""
     serializer_class = TokenSerializer
 
     def post(self, request, *args, **kwargs):
         """Метод обработки POST запроса."""
         self.get_serializer(data=request.data).is_valid(raise_exception=True)
-        token = RefreshToken.for_user(User.objects.get(username=request.data.get('username')))
+        token = RefreshToken.for_user(
+            User.objects.get(username=request.data.get('username'))
+        )
         return Response(
             {'token': str(token.access_token)},
             status=status.HTTP_200_OK
         )
 
 
-def generate_confirmation_code(length=6):
+def generate_confirmation_code():
     """Генерация кода подтверждения заданной длины."""
     return ''.join(random.choices(
-        string.ascii_uppercase + string.digits, k=length
+        CONFIRMATION_CODE_ALLOWED_CHARS, k=CONFIRMATION_CODE_LENGTH
     ))
 
 
@@ -69,21 +74,9 @@ class UserRegistrationView(APIView):
         """Регистрирует нового пользователя."""
         username = request.data.get('username')
         email = request.data.get('email')
-        if username == 'me':
-            return Response(
-                {'error': 'Username "me" is not allowed'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
         existing_user = User.objects.filter(username=username).first()
         if existing_user:
             if existing_user.email == email:
-                confirmation_code = generate_confirmation_code()
-                existing_user.confirmation_code = confirmation_code
-                existing_user.save()
-                self.send_confirmation_email(
-                    existing_user.email,
-                    confirmation_code
-                )
                 return Response(
                     {
                         'username': existing_user.username,
@@ -97,96 +90,23 @@ class UserRegistrationView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
         else:
-            if User.objects.filter(email=email).exists():
-                return Response(
-                    {'email': 'Пользователь с таким email уже существует.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
             serializer = UserSerializer(data=request.data)
-            if serializer.is_valid():
-                confirmation_code = generate_confirmation_code()
-                user = serializer.save(confirmation_code=confirmation_code)
-                self.send_confirmation_email(user.email, confirmation_code)
-                return Response(
-                    {'username': user.username, 'email': user.email},
-                    status=status.HTTP_200_OK
-                )
-            else:
-                return Response(
-                    serializer.errors,
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            serializer.is_valid(raise_exception=True)
+            confirmation_code = generate_confirmation_code()
+            user = serializer.save(confirmation_code=confirmation_code)
+            self.send_confirmation_email(user.email, confirmation_code)
+            return Response(
+                {'username': user.username, 'email': user.email},
+                status=status.HTTP_200_OK
+            )
 
     def send_confirmation_email(self, email, confirmation_code):
         """Отправляет email с кодом подтверждения."""
         subject = 'Код подтверждения регистрации'
         message = f'Ваш код подтверждения: {confirmation_code}'
-        from_email = 'email@example.com'
+        from_email = MAIL
         recipient_list = [email]
         send_mail(subject, message, from_email, recipient_list)
-
-
-class UserMeView(RetrieveUpdateAPIView):
-    """View для получения и обновления информации о текущем пользователе."""
-    permission_classes = [IsAuthenticated]
-    serializer_class = UserMeSerializer
-
-    def get_object(self):
-        """Получение объекта пользователя."""
-        return self.request.user
-
-
-class UserByUsernameView(RetrieveAPIView, DestroyModelMixin):
-    """
-    View для получения,
-    обновления и удаления информации о пользователе по имени.
-    """
-    permission_classes = [IsAuthenticated, IsAdmin]
-    serializer_class = UserSerializer
-    queryset = User.objects.all()
-    lookup_field = 'username'
-
-    def get(self, request, *args, **kwargs):
-        """Получение информации о пользователе."""
-        return self.retrieve(request, *args, **kwargs)
-
-    def delete(self, request, *args, **kwargs):
-        """Удаление информации о пользователе."""
-        return self.destroy(request, *args, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):
-        """Удаление объекта пользователя."""
-        instance = self.get_object()
-        instance.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    def patch(self, request, *args, **kwargs):
-        """Частичное обновление информации о пользователе."""
-        instance = self.get_object()
-        serializer = self.get_serializer(
-            instance,
-            data=request.data,
-            partial=True
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
-
-
-class UserListView(generics.ListAPIView):
-    """View для получения списка всех пользователей."""
-    permission_classes = [IsAuthenticated, IsAdmin]
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    lookup_field = 'username'
-
-    def post(self, request):
-        """Создает нового пользователя."""
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -202,25 +122,27 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(
         detail=False,
         methods=['get', 'patch'],
-        url_path='me',
-        url_name='me',
+        url_path=PATH,
+        url_name=PATH,
         permission_classes=(IsAuthenticated,)
     )
     def me(self, request):
         """Метод для работы с текущим пользователем."""
-        if request.method == 'PATCH':
-            serializer = self.get_serializer(
-                request.user,
-                data=request.data,
-                partial=True,
+        if request.method != 'PATCH':
+            return Response(
+                self.get_serializer(request.user).data,
+                status=status.HTTP_200_OK
             )
-            serializer.is_valid(raise_exception=True)
-            serializer.save(
-                role=request.user.role,
-                partial=True,
-            )
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        serializer = self.get_serializer(request.user)
+        serializer = self.get_serializer(
+            request.user,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save(
+            role=request.user.role,
+            partial=True,
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
