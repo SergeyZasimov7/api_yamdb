@@ -56,6 +56,7 @@ class ReadOnlyTitleSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор для модели User."""
+
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
@@ -115,6 +116,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only_fields = ('author', 'title')
 
     def validate_score(self, value):
+        """Проверка диапазона оценки."""
         if not (1 <= value <= 10):
             raise serializers.ValidationError(
                 'Оценка выставляется от 1 до 10!'
@@ -122,6 +124,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, request):
+        """Проверка отзыва."""
         if self.context['request'].method != "PATCH":
             author = self.context['request'].user
             title = self.context['request'].parser_context['kwargs']['title_id']

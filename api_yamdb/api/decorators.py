@@ -2,6 +2,7 @@ from functools import wraps
 from rest_framework import status
 from rest_framework.response import Response
 
+
 def put_method_not_allowed(view_func):
     """Декоратор запрета PUT запроса."""
     @wraps(view_func)

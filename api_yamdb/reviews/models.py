@@ -126,6 +126,7 @@ class Title(models.Model):
 
 
 class Review(models.Model):
+    """Модель отзывов."""
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='reviews')
     title = models.ForeignKey(
@@ -134,7 +135,7 @@ class Review(models.Model):
     score = models.IntegerField()
     pub_date = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True)
-    
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -146,8 +147,9 @@ class Review(models.Model):
     def __str__(self):
         return self.text
 
-    
+
 class Comment(models.Model):
+    """Модель комментариев."""
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='comments')
     review = models.ForeignKey(

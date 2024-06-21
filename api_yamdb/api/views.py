@@ -9,7 +9,9 @@ from rest_framework.decorators import action
 from rest_framework.generics import RetrieveUpdateAPIView, RetrieveAPIView
 from rest_framework.mixins import DestroyModelMixin
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (
+    AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
+)
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -17,7 +19,6 @@ from rest_framework.views import APIView
 from .permissions import (
     IsAdmin,
     IsAdminOrReadOnly,
-    IsAdminOrSuperuser,
     ThisAuthorOrReadOnly
 )
 
@@ -28,11 +29,11 @@ from .serializers import (
     CommentSerializer,
     GenreSerializer,
     TitleSerializer,
-    UserSerializer,
+    TokenSerializer,
     ReadOnlyTitleSerializer,
     ReviewSerializer,
     UserMeSerializer,
-    TokenSerializer
+    UserSerializer
 )
 from .filters import TitleFilter
 from .mixins import ListCreateDestroyViewSet
@@ -158,30 +159,31 @@ class UserMeView(RetrieveUpdateAPIView):
         """Получение объекта пользователя."""
         return self.request.user
 
+
 class UserByUsernameView(RetrieveAPIView, DestroyModelMixin):
     """
     View для получения,
     обновления и удаления информации о пользователе по имени.
     """
-    permission_classes = [IsAuthenticated, IsAdminOrSuperuser]
+    permission_classes = [IsAuthenticated, IsAdmin]
     serializer_class = UserSerializer
     queryset = User.objects.all()
     lookup_field = 'username'
-    
+
     def get(self, request, *args, **kwargs):
         """Получение информации о пользователе."""
         return self.retrieve(request, *args, **kwargs)
-    
+
     def delete(self, request, *args, **kwargs):
         """Удаление информации о пользователе."""
         return self.destroy(request, *args, **kwargs)
-    
+
     def destroy(self, request, *args, **kwargs):
         """Удаление объекта пользователя."""
         instance = self.get_object()
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
     def patch(self, request, *args, **kwargs):
         """Частичное обновление информации о пользователе."""
         instance = self.get_object()
@@ -197,7 +199,7 @@ class UserByUsernameView(RetrieveAPIView, DestroyModelMixin):
 
 class UserListView(generics.ListAPIView):
     """View для получения списка всех пользователей."""
-    permission_classes = [IsAuthenticated, IsAdminOrSuperuser]
+    permission_classes = [IsAuthenticated, IsAdmin]
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'
@@ -220,7 +222,7 @@ class UserViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     http_method_names = ['get', 'post', 'patch', 'delete']
-    
+
     @action(
         detail=False,
         methods=['get', 'patch'],
@@ -266,60 +268,29 @@ class GenreViewSet(ListCreateDestroyViewSet):
     lookup_field = 'slug'
 
 
-# class TitleViewSet(viewsets.ModelViewSet):
-#     queryset = Title.objects.all().order_by('name')
-#     permission_classes = (IsAdminOrReadOnly,)
-#     serializer_class = TitleSerializer
-#     filterset_class = TitleFilter
-#     filter_backends = [DjangoFilterBackend]
-#     http_method_names = ['get', 'post', 'patch', 'delete']
-#     def get_serializer_class(self):
-#         if self.action in ('retrieve', 'list'):
-#             return ReadOnlyTitleSerializer
-#         return TitleSerializer
-    
-
-# from functools import wraps
-# from rest_framework.response import Response
-# from rest_framework import status
-
-
-# def put_method_not_allowed(view_func):
-#     """Декоратор запрета PUT запроса."""
-#     @wraps(view_func)
-#     def _wrapped_view(self, request, *args, **kwargs):
-#         """Функция проверки запроса."""
-#         if request.method == 'PUT':
-#             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-#         return view_func(self, request, *args, **kwargs)
-#     return _wrapped_view
-
-
 class TitleViewSet(viewsets.ModelViewSet):
     """ViewSet для произведений."""
-    # queryset = Title.objects.all().order_by('name')
     queryset = Title.objects.all().annotate(rating=Avg('reviews__score')).order_by('name')
     permission_classes = (IsAdminOrReadOnly,)
     serializer_class = TitleSerializer
     filterset_class = TitleFilter
     filter_backends = [DjangoFilterBackend]
-    
+
     def get_serializer_class(self):
         """Метод определения класса сериализатора."""
         if self.action in ('retrieve', 'list'):
             return ReadOnlyTitleSerializer
         return TitleSerializer
-    
+
     @put_method_not_allowed
     def update(self, request, *args, **kwargs):
         """Метод обновления записи о произведении."""
         return super().update(request, *args, **kwargs)
-    
+
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Обрабатывает API запросы к моделе Review."""
     permission_classes = [IsAuthenticatedOrReadOnly, ThisAuthorOrReadOnly]
-
     serializer_class = ReviewSerializer
     pagination_class = LimitOffsetPagination
 
@@ -337,17 +308,16 @@ class ReviewViewSet(viewsets.ModelViewSet):
         serializer.save(
             author=self.request.user,
             title=self.get_post_object())
-    
+
     @put_method_not_allowed
     def update(self, request, *args, **kwargs):
         """Метод обновления отзыва."""
         return super().update(request, *args, **kwargs)
-        
+
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Обрабатывает API запросы к моделе Comment."""
     permission_classes = [IsAuthenticatedOrReadOnly, ThisAuthorOrReadOnly]
-
     serializer_class = CommentSerializer
     pagination_class = LimitOffsetPagination
 
@@ -365,8 +335,8 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(
             author=self.request.user,
             review=self.get_post_object())
-        
+
     @put_method_not_allowed
     def update(self, request, *args, **kwargs):
-        """Метод обновления отзыва."""
+        """Метод обновления комментария."""
         return super().update(request, *args, **kwargs)
