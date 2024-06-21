@@ -222,17 +222,17 @@ class CommentViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
     http_method_names = ALLOWED_REQUESTS
 
-    def get_post_object(self):
+    def get_post(self):
         """Возвращает объект Post c id из запроса."""
         review_id = self.kwargs['review_id']
         return get_object_or_404(Review, id=review_id)
 
     def get_queryset(self):
         """Переопределение функции возврата списка комментариев."""
-        return self.get_post_object().comments.all()
+        return self.get_post().comments.all()
 
     def perform_create(self, serializer):
         """Переопределение функции создания комментария."""
         serializer.save(
             author=self.request.user,
-            review=self.get_post_object())
+            review=self.get_post())

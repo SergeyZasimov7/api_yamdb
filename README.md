@@ -46,7 +46,7 @@ python manage.py import_csv
 ```
 python manage.py runserver
 ```
-Документация:
+**Документация:**
 ```
 [http://127.0.0.1:8000/redoc/](http://127.0.0.1:8000/redoc/) 
 ```
