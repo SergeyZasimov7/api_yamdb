@@ -40,7 +40,7 @@ from .filters import TitleFilter
 from .mixins import ListCreateDestroyViewSet
 
 
-class TokenObtainPairView(TokenObtainPairView):
+class MyTokenObtainPairView(TokenObtainPairView):
     """View для получения токена."""
     serializer_class = TokenSerializer
 
@@ -271,7 +271,9 @@ class GenreViewSet(ListCreateDestroyViewSet):
 
 class TitleViewSet(viewsets.ModelViewSet):
     """ViewSet для произведений."""
-    queryset = Title.objects.all().annotate(rating=Avg('reviews__score')).order_by('name')
+    queryset = Title.objects.all().annotate(
+        rating=Avg('reviews__score')
+    ).order_by('name')
     permission_classes = (IsAdminOrReadOnly,)
     serializer_class = TitleSerializer
     filterset_class = TitleFilter

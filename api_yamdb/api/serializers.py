@@ -59,7 +59,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+        fields = (
+            'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+        )
 
 
 class TokenSerializer(serializers.Serializer):
@@ -127,7 +129,9 @@ class ReviewSerializer(serializers.ModelSerializer):
         """Проверка отзыва."""
         if self.context['request'].method != "PATCH":
             author = self.context['request'].user
-            title = self.context['request'].parser_context['kwargs']['title_id']
+            title = (
+                self.context['request'].parser_context['kwargs']['title_id']
+            )
             if Review.objects.filter(author=author, title=title):
                 raise serializers.ValidationError(
                     'Пользователь может оставлять только один отзыв!')

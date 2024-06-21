@@ -6,7 +6,7 @@ from .views import (
     CommentViewSet,
     GenreViewSet,
     TitleViewSet,
-    TokenObtainPairView,
+    MyTokenObtainPairView,
     ReviewViewSet,
     UserByUsernameView,
     UserMeView,
@@ -48,7 +48,7 @@ router_v1.register(
 )
 
 urlpatterns = [
-    path('v1/auth/token/', TokenObtainPairView.as_view(),
+    path('v1/auth/token/', MyTokenObtainPairView.as_view(),
          name='token_obtain_pair'),
     path('v1/auth/signup/', UserRegistrationView.as_view(), name='signup'),
     path('v1/users/me/', UserMeView.as_view(), name='user_me'),
