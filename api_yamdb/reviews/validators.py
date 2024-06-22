@@ -1,9 +1,9 @@
 import re
 
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-
-from api_yamdb.settings import USER_PATH
 
 
 def validate_year(year):
@@ -22,8 +22,7 @@ def validate_username(named):
     Проверяет, что имя пользователя
     не содержит недопустимых символов и не равно 'me'(USER_PATH).
     """
-    USER_PATH = 'me'
-    if named == USER_PATH:
+    if named == settings.USER_PATH:
         raise ValidationError('Имя пользователя не может быть "me".')
     # Регулярное выражение для допустимых символов
     regex = r'[\w.@+-]+'
@@ -34,4 +33,6 @@ def validate_username(named):
         raise ValidationError(
             f'Недопустимые символы в имени пользователя: {invalid_chars_str}.'
         )
+    if get_user_model().objects.filter(username=named).exists():
+        raise ValidationError('Пользователь с таким именем уже существует.')
     return named

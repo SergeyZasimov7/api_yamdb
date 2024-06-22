@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from reviews.constans import NAME_LENGTH
 from reviews.models import Categorie, Comment, Genre, Title, Review, User
+from reviews.validators import validate_username
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -60,6 +61,11 @@ class ReadTitleSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор для модели User."""
+    username = serializers.CharField(
+        validators=[validate_username],
+        required=True,
+        max_length=NAME_LENGTH
+    )
 
     class Meta:
         model = User
@@ -73,7 +79,8 @@ class TokenSerializer(serializers.Serializer):
     username = serializers.CharField(required=True, max_length=NAME_LENGTH)
     confirmation_code = serializers.CharField(
         required=True,
-        max_length=settings.CONFIRMATION_CODE_LENGTH
+        max_length=settings.CONFIRMATION_CODE_LENGTH,
+        allow_null=True
     )
 
     def validate(self, data):
@@ -84,11 +91,12 @@ class TokenSerializer(serializers.Serializer):
         username = data['username']
         confirmation_code = data['confirmation_code']
         user = get_object_or_404(User, username=username)
-        if not user.confirmation_code == confirmation_code:
-            raise serializers.ValidationError(
-                "Код подтверждения неверен."
-            )
-        user.confirmation_code = None
+        if confirmation_code:
+            if user.confirmation_code != confirmation_code:
+                raise serializers.ValidationError(
+                    "Код подтверждения неверен."
+                )
+            user.confirmation_code = None
         user.save()
         return data
 

@@ -66,21 +66,25 @@ class UserRegistrationView(APIView):
         """Регистрирует нового пользователя."""
         username = request.data.get('username')
         email = request.data.get('email')
-        existing_user = User.objects.filter(username=username).first()
+        existing_user = (
+            User.objects.filter(username=username, email=email).first()
+        )
+
         if existing_user:
-            if existing_user.email == email:
-                return Response(
-                    {
-                        'username': existing_user.username,
-                        'email': existing_user.email
-                    },
-                    status=status.HTTP_200_OK
-                )
-            else:
-                return Response(
-                    {'email': 'Пользователь с таким email уже существует.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            confirmation_code = generate_confirmation_code()
+            existing_user.confirmation_code = confirmation_code
+            existing_user.save()
+            self.send_confirmation_email(
+                existing_user.email,
+                confirmation_code
+            )
+            return Response(
+                {
+                    'username': existing_user.username,
+                    'email': existing_user.email
+                },
+                status=status.HTTP_200_OK
+            )
         else:
             serializer = UserSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
