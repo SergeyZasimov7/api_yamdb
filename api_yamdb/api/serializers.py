@@ -2,7 +2,7 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
-from reviews.constans import NAME_LENGTH
+from reviews.constans import NAME_LENGTH, MIN_SCORE, MAX_SCORE
 from reviews.models import Categorie, Comment, Genre, Title, Review, User
 from reviews.validators import validate_username
 
@@ -107,6 +107,10 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True, slug_field='username',
         default=serializers.CurrentUserDefault()
     )
+    score = serializers.IntegerField(
+        min_value=MIN_SCORE,
+        max_value=MAX_SCORE
+    )
 
     class Meta:
         fields = ('id', 'text', 'author', 'score', 'pub_date')
@@ -114,11 +118,12 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def validate(self, request):
         """Проверка отзыва."""
-        if self.context['request'].method == "PATCH":
+        data_request = self.context['request']
+        if data_request.method == "PATCH":
             return request
-        author = self.context['request'].user
+        author = data_request.user
         title = (
-            self.context['request'].parser_context['kwargs']['title_id']
+            data_request.parser_context['kwargs']['title_id']
         )
         if Review.objects.filter(author=author, title=title):
             raise serializers.ValidationError(

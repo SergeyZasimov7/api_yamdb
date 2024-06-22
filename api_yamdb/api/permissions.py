@@ -22,8 +22,8 @@ class IsAdminOrReadOnly(IsAdmin):
         )
 
 
-class IsAuthorOrReadOnly(permissions.BasePermission):
-    """Класс разрешений."""
+class IsAuthorOrIsAdminIsModeratorOrRead(permissions.BasePermission):
+    """Класс проверки доступа для автора и модератора."""
 
     def has_object_permission(self, request, view, obj):
         """
@@ -32,8 +32,9 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
         """
         return (
             request.method in permissions.SAFE_METHODS
+            or obj.author == request.user
             or (request.user.is_authenticated and (
-                obj.author == request.user
-                or request.user.is_admin
-                or request.user.is_moderator))
+                request.user.is_admin
+                or request.user.is_moderator)
+            )
         )

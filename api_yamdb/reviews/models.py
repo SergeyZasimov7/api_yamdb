@@ -134,31 +134,31 @@ class Title(models.Model):
         return self.name
 
 
-class BaseModel(models.Model):
+class BaseTextDateModel(models.Model):
     """Базовый класс для моделей отзывов и комментариев."""
-    author = models.ForeignKey(
-        User, on_delete=models.CASCADE)
-    text = models.TextField()
+    text = models.TextField(verbose_name='Текст')
     pub_date = models.DateTimeField(
-        'Дата добавления', auto_now_add=True, db_index=True)
+        auto_now_add=True, db_index=True, verbose_name='Дата публикации')
 
     class Meta:
         abstract = True
         ordering = ('text',)
 
 
-class Review(BaseModel):
+class Review(BaseTextDateModel):
     """Модель отзывов."""
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='reviews', verbose_name='Автор')
     title = models.ForeignKey(
-        Title, on_delete=models.CASCADE, related_name='reviews')
+        Title, on_delete=models.CASCADE, related_name='reviews', verbose_name='Произведение')
     score = models.IntegerField(
         validators=[
             MaxValueValidator(MAX_SCORE),
             MinValueValidator(MIN_SCORE)
-        ]
+        ], verbose_name='Оценка'
     )
 
-    class Meta:
+    class Meta(BaseTextDateModel.Meta):
         constraints = [
             models.UniqueConstraint(
                 fields=['author', 'title'],
@@ -170,7 +170,9 @@ class Review(BaseModel):
         return self.text[:SLICE_NAME_OBJECT]
 
 
-class Comment(BaseModel):
+class Comment(BaseTextDateModel):
     """Модель комментариев."""
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='comments', verbose_name='Автор')
     review = models.ForeignKey(
-        Review, on_delete=models.CASCADE, related_name='comments')
+        Review, on_delete=models.CASCADE, related_name='comments', verbose_name='Отзыв')
