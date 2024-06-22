@@ -1,7 +1,8 @@
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
-from reviews.constans import NAME_LENGTH, CONFIRMATION_CODE_LENGTH
+from reviews.constans import NAME_LENGTH
 from reviews.models import Categorie, Comment, Genre, Title, Review, User
 
 
@@ -54,7 +55,7 @@ class ReadTitleSerializer(serializers.ModelSerializer):
         model = Title
         fields = ('id', 'name', 'year', 'description',
                   'genre', 'category', 'rating')
-        read_only_fields = ('__all__',)
+        read_only_fields = (fields,)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -72,7 +73,7 @@ class TokenSerializer(serializers.Serializer):
     username = serializers.CharField(required=True, max_length=NAME_LENGTH)
     confirmation_code = serializers.CharField(
         required=True,
-        max_length=CONFIRMATION_CODE_LENGTH
+        max_length=settings.CONFIRMATION_CODE_LENGTH
     )
 
     def validate(self, data):

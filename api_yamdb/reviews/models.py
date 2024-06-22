@@ -1,13 +1,20 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from .validators import validate_year, validate_username
-from .constans import NAME_LENGTH, MIN_SCORE, MAX_SCORE, SLICE_NAME_OBJECT
+from .constans import (
+    NAME_LENGTH,
+    MIN_SCORE,
+    MAX_SCORE,
+    SLICE_NAME_OBJECT,
+    EMAIL_LENGTH
+)
 
 
 class User(AbstractUser):
-    """Модель класса User унаследованная от AbstractUser"""
+    """Модель для пользователей"""
 
     class Role(models.TextChoices):
         USER = 'user'
@@ -20,9 +27,12 @@ class User(AbstractUser):
         unique=True,
         validators=[validate_username]
     )
-    confirmation_code = models.CharField(max_length=6, blank=True)
+    confirmation_code = models.CharField(
+        max_length=settings.CONFIRMATION_CODE_LENGTH,
+        blank=True
+    )
     email = models.EmailField(
-        max_length=254,
+        max_length=EMAIL_LENGTH,
         verbose_name='Почта',
         unique=True
     )
@@ -40,7 +50,7 @@ class User(AbstractUser):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-        ordering = ['username']
+        ordering = ('username',)
 
     @property
     def is_admin(self):

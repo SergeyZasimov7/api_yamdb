@@ -6,7 +6,7 @@ from .views import (
     CommentViewSet,
     GenreViewSet,
     TitleViewSet,
-    SlidingTokenObtainView,
+    obtain_token,
     ReviewViewSet,
     UserRegistrationView,
     UserViewSet
@@ -20,20 +20,23 @@ router_v1.register('users', UserViewSet, basename='users')
 router_v1.register('categories', CategoryViewSet)
 router_v1.register('genres', GenreViewSet)
 router_v1.register('titles', TitleViewSet)
-router_v1.register(r'titles/(?P<title_id>\d+)/reviews',
-                   ReviewViewSet,
-                   basename='title-reviews')
+router_v1.register(
+    r'titles/(?P<title_id>\d+)/reviews',
+    ReviewViewSet,
+    basename='title-reviews')
 router_v1.register(
     r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
-    CommentViewSet, basename='review-comments'
+    CommentViewSet,
+    basename='review-comments'
 )
-auth_urls = [
-    path('v1/auth/token/', SlidingTokenObtainView.as_view(),
-         name='token_obtain_pair'),
-    path('v1/auth/signup/', UserRegistrationView.as_view(), name='signup'),
-]
 
 urlpatterns = [
-    *auth_urls,
+    path('v1/auth/', include([
+        path(
+            'token/',
+            obtain_token, name='obtain_token'
+        ),
+        path('signup/', UserRegistrationView.as_view(), name='signup'),
+    ])),
     path('v1/', include(router_v1.urls)),
 ]

@@ -1,18 +1,18 @@
 import random
 
+from django.conf import settings
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, filters, mixins
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import (
     AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 )
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
 
 from .permissions import (
@@ -22,11 +22,7 @@ from .permissions import (
 )
 
 from reviews.models import Categorie, Genre, Title, Review, User
-from reviews.constans import ALLOWED_REQUESTS, PATH, MAIL
-from api_yamdb.settings import (
-    CONFIRMATION_CODE_ALLOWED_CHARS,
-    CONFIRMATION_CODE_LENGTH
-)
+from reviews.constans import ALLOWED_REQUESTS
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -40,26 +36,24 @@ from .serializers import (
 from .filters import TitleFilter
 
 
-class SlidingTokenObtainView(TokenObtainPairView):
-    """View для получения токена."""
-    serializer_class = TokenSerializer
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def obtain_token(request):
+    """Функция для получения токена."""
+    serializer = TokenSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
 
-    def post(self, request, *args, **kwargs):
-        """Метод обработки POST запроса."""
-        self.get_serializer(data=request.data).is_valid(raise_exception=True)
-        token = RefreshToken.for_user(
-            User.objects.get(username=request.data.get('username'))
-        )
-        return Response(
-            {'token': str(token.access_token)},
-            status=status.HTTP_200_OK
-        )
+    user = User.objects.get(username=serializer.validated_data.get('username'))
+    return Response({
+        'token': str(RefreshToken.for_user(user).access_token)
+    }, status=status.HTTP_200_OK)
 
 
 def generate_confirmation_code():
     """Генерация кода подтверждения заданной длины."""
     return ''.join(random.choices(
-        CONFIRMATION_CODE_ALLOWED_CHARS, k=CONFIRMATION_CODE_LENGTH
+        settings.CONFIRMATION_CODE_ALLOWED_CHARS,
+        k=settings.CONFIRMATION_CODE_LENGTH
     ))
 
 
@@ -101,7 +95,7 @@ class UserRegistrationView(APIView):
         """Отправляет email с кодом подтверждения."""
         subject = 'Код подтверждения регистрации'
         message = f'Ваш код подтверждения: {confirmation_code}'
-        from_email = MAIL
+        from_email = settings.USER_EMAIL
         recipient_list = [email]
         send_mail(subject, message, from_email, recipient_list)
 
@@ -119,11 +113,11 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(
         detail=False,
         methods=['get', 'patch'],
-        url_path=PATH,
-        url_name=PATH,
+        url_path=settings.USER_PATH,
+        url_name=settings.USER_PATH,
         permission_classes=(IsAuthenticated,)
     )
-    def me(self, request):
+    def current_user(self, request):
         """Метод для работы с текущим пользователем."""
         if request.method != 'PATCH':
             return Response(
@@ -198,8 +192,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def get_post(self):
         """Возвращает объект Title c id из запроса."""
-        title_id = self.kwargs['title_id']
-        return get_object_or_404(Title, id=title_id)
+        return get_object_or_404(Title, id=self.kwargs['title_id'])
 
     def get_queryset(self):
         """Переопределение функции возврата списка отзывов."""
@@ -221,8 +214,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_post(self):
         """Возвращает объект Post c id из запроса."""
-        review_id = self.kwargs['review_id']
-        return get_object_or_404(Review, id=review_id)
+        return get_object_or_404(Review, id=self.kwargs['review_id'])
 
     def get_queryset(self):
         """Переопределение функции возврата списка комментариев."""
