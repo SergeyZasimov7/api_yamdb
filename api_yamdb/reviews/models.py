@@ -148,9 +148,17 @@ class BaseTextDateModel(models.Model):
 class Review(BaseTextDateModel):
     """Модель отзывов."""
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='reviews', verbose_name='Автор')
+        User,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Автор'
+    )
     title = models.ForeignKey(
-        Title, on_delete=models.CASCADE, related_name='reviews', verbose_name='Произведение')
+        Title,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Произведение'
+    )
     score = models.IntegerField(
         validators=[
             MaxValueValidator(MAX_SCORE),
@@ -173,6 +181,14 @@ class Review(BaseTextDateModel):
 class Comment(BaseTextDateModel):
     """Модель комментариев."""
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='comments', verbose_name='Автор')
+        User,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Автор'
+    )
     review = models.ForeignKey(
-        Review, on_delete=models.CASCADE, related_name='comments', verbose_name='Отзыв')
+        Review,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Отзыв'
+    )

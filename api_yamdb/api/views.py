@@ -185,7 +185,10 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Обрабатывает API запросы к моделе Review."""
-    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrIsAdminIsModeratorOrRead]
+    permission_classes = [
+        IsAuthenticatedOrReadOnly,
+        IsAuthorOrIsAdminIsModeratorOrRead
+    ]
     serializer_class = ReviewSerializer
     pagination_class = LimitOffsetPagination
     http_method_names = ALLOWED_REQUESTS
@@ -207,7 +210,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Обрабатывает API запросы к моделе Comment."""
-    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrIsAdminIsModeratorOrRead]
+    permission_classes = [
+        IsAuthenticatedOrReadOnly,
+        IsAuthorOrIsAdminIsModeratorOrRead
+    ]
     serializer_class = CommentSerializer
     pagination_class = LimitOffsetPagination
     http_method_names = ALLOWED_REQUESTS
