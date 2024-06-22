@@ -4,11 +4,9 @@ from rest_framework import permissions
 class IsAdmin(permissions.BasePermission):
     """Класс проверки доступа для админа и суперюзера."""
 
-    def is_admin(self, user):
-        return user.is_authenticated and user.is_admin
-
     def has_permission(self, request, view):
-        return self.is_admin(request.user)
+        user = request.user
+        return user.is_authenticated and user.is_admin
 
 
 class IsAdminOrReadOnly(IsAdmin):
@@ -18,9 +16,10 @@ class IsAdminOrReadOnly(IsAdmin):
     """
 
     def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return super().has_permission(request, view)
+        return (
+            request.method in permissions.SAFE_METHODS or super(
+            ).has_permission(request, view)
+        )
 
 
 class IsAuthorOrReadOnly(permissions.BasePermission):

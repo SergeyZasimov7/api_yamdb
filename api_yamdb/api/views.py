@@ -5,7 +5,7 @@ from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, status, filters, mixins
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import (
@@ -34,6 +34,7 @@ from .serializers import (
     UserSerializer
 )
 from .filters import TitleFilter
+from .mixins import ListCreateDestoyMixins
 
 
 @api_view(['POST'])
@@ -137,29 +138,24 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class BaseCategoryGenreViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
+class BaseEditingKitViewSet(
+    ListCreateDestoyMixins,
     viewsets.GenericViewSet,
 ):
-    """
-    Базовый набор миксинов, который предоставляет действия:
-    "перечислить", "создать" и "удалить".
-    """
+    """Базовый ViewSet, для перечисления, создания и удаления."""
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
 
 
-class CategoryViewSet(BaseCategoryGenreViewSet):
+class CategoryViewSet(BaseEditingKitViewSet):
     """ViewSet для категорий."""
     queryset = Categorie.objects.all()
     serializer_class = CategorySerializer
 
 
-class GenreViewSet(BaseCategoryGenreViewSet):
+class GenreViewSet(BaseEditingKitViewSet):
     """ViewSet для жанров."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
@@ -169,7 +165,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     """ViewSet для произведений."""
     queryset = Title.objects.all().annotate(
         rating=Avg('reviews__score')
-    ).order_by('name')
+    ).order_by(*Title._meta.ordering)
     permission_classes = (IsAdminOrReadOnly,)
     serializer_class = TitleSerializer
     filterset_class = TitleFilter

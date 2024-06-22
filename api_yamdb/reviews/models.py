@@ -61,14 +61,14 @@ class User(AbstractUser):
         return self.role == self.Role.MODERATOR
 
 
-class BaseCategoryGenre(models.Model):
-    """Базовый класс для категорий и жанров."""
+class BaseNamedSlugModel(models.Model):
+    """Базовый модель, содержащая поля 'name' и 'slug'."""
     name = models.CharField(
         verbose_name='название',
         max_length=256
     )
     slug = models.SlugField(
-        verbose_name='slug',
+        verbose_name='метка',
         max_length=50,
         unique=True
     )
@@ -81,14 +81,20 @@ class BaseCategoryGenre(models.Model):
         return self.name
 
 
-class Categorie(BaseCategoryGenre):
+class Categorie(BaseNamedSlugModel):
     """Модель для категорий."""
-    pass
+
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
 
 
-class Genre(BaseCategoryGenre):
+class Genre(BaseNamedSlugModel):
     """Модель для жанров."""
-    pass
+
+    class Meta:
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
 
 
 class Title(models.Model):
