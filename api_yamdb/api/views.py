@@ -43,7 +43,7 @@ def obtain_token(request):
     serializer = TokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = get_object_or_404(
-        username=serializer.validated_data.get('username')
+        username=serializer.validated_data['username']
     )
     return Response({
         'token': str(RefreshToken.for_user(user).access_token)
@@ -66,27 +66,24 @@ class UserRegistrationView(APIView):
         """Регистрирует нового пользователя."""
         username = request.data.get('username')
         email = request.data.get('email')
-        confirmation_code = generate_confirmation_code()
-        self.send_confirmation_email(email, confirmation_code)
+
         if User.objects.filter(username=username, email=email).exists():
-            existing_user = User.objects.get(username=username, email=email)
-            existing_user.confirmation_code = confirmation_code
-            existing_user.save()
-            return Response(
-                {
-                    'username': existing_user.username,
-                    'email': existing_user.email
-                },
-                status=status.HTTP_200_OK
-            )
+            user = User.objects.get(username=username, email=email)
+            user.save()
         else:
             serializer = UserSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            user = serializer.save(confirmation_code=confirmation_code)
-            return Response(
-                {'username': user.username, 'email': user.email},
-                status=status.HTTP_200_OK
+            confirmation_code = generate_confirmation_code()
+            self.send_confirmation_email(email, confirmation_code)
+            user = User.objects.create(
+                username=username,
+                email=email,
+                confirmation_code=generate_confirmation_code()
             )
+        return Response(
+            {'username': user.username, 'email': user.email},
+            status=status.HTTP_200_OK
+        )
 
     def send_confirmation_email(self, email, confirmation_code):
         """Отправляет email с кодом подтверждения."""

@@ -98,7 +98,6 @@ class TokenSerializer(serializers.Serializer):
                 raise serializers.ValidationError(
                     "Код подтверждения неверен."
                 )
-            user.confirmation_code = None
         return data
 
 
