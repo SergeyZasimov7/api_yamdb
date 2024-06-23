@@ -119,14 +119,14 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def validate(self, request):
         """Проверка отзыва."""
-        data_request = self.context['request']
-        if data_request.method == "PATCH":
+        query = self.context['request']
+        if query.method == "PATCH":
             return request
-        author = data_request.user
+        visitor = query.user
         title = (
-            data_request.parser_context['kwargs']['title_id']
+            query.parser_context['kwargs']['title_id']
         )
-        if Review.objects.filter(author=author, title=title):
+        if Review.objects.filter(author=visitor, title=title):
             raise serializers.ValidationError(
                 'Пользователь может оставлять только один отзыв!')
         return request

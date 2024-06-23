@@ -134,7 +134,7 @@ class Title(models.Model):
         return self.name
 
 
-class BaseTextDateModel(models.Model):
+class BaseTextDateAuthorModel(models.Model):
     """Базовый класс для моделей отзывов и комментариев."""
     text = models.TextField(verbose_name='Текст')
     pub_date = models.DateTimeField(
@@ -151,7 +151,7 @@ class BaseTextDateModel(models.Model):
         ordering = ('-pub_date',)
 
 
-class Review(BaseTextDateModel):
+class Review(BaseTextDateAuthorModel):
     """Модель отзывов."""
     title = models.ForeignKey(
         'Title',
@@ -166,7 +166,7 @@ class Review(BaseTextDateModel):
         ], verbose_name='Оценка'
     )
 
-    class Meta(BaseTextDateModel.Meta):
+    class Meta(BaseTextDateAuthorModel.Meta):
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
         constraints = [
@@ -180,7 +180,7 @@ class Review(BaseTextDateModel):
         return self.text[:SLICE_NAME_OBJECT]
 
 
-class Comment(BaseTextDateModel):
+class Comment(BaseTextDateAuthorModel):
     """Модель комментариев."""
     review = models.ForeignKey(
         Review,
@@ -189,7 +189,7 @@ class Comment(BaseTextDateModel):
         verbose_name='Отзыв'
     )
 
-    class Meta(BaseTextDateModel.Meta):
+    class Meta(BaseTextDateAuthorModel.Meta):
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
 
