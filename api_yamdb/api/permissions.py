@@ -22,7 +22,7 @@ class IsAdminOrReadOnly(IsAdmin):
         )
 
 
-class IsAuthorOrIsAdminorIsModeratorOrRead(IsAdmin):
+class IsAuthorOrIsAdminOrIsModeratorOrRead(IsAdmin):
     """Класс проверки доступа для автора и модератора."""
 
     def has_permission(self, request, view):

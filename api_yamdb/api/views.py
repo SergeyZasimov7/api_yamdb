@@ -18,7 +18,7 @@ from rest_framework.views import APIView
 from .permissions import (
     IsAdmin,
     IsAdminOrReadOnly,
-    IsAuthorOrIsAdminorIsModeratorOrRead
+    IsAuthorOrIsAdminOrIsModeratorOrRead
 )
 
 from reviews.models import Categorie, Genre, Title, Review, User
@@ -182,7 +182,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """Обрабатывает API запросы к моделе Review."""
     permission_classes = [
         IsAuthenticatedOrReadOnly,
-        IsAuthorOrIsAdminorIsModeratorOrRead
+        IsAuthorOrIsAdminOrIsModeratorOrRead
     ]
     serializer_class = ReviewSerializer
     pagination_class = LimitOffsetPagination
@@ -207,7 +207,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     """Обрабатывает API запросы к моделе Comment."""
     permission_classes = [
         IsAuthenticatedOrReadOnly,
-        IsAuthorOrIsAdminorIsModeratorOrRead
+        IsAuthorOrIsAdminOrIsModeratorOrRead
     ]
     serializer_class = CommentSerializer
     pagination_class = LimitOffsetPagination

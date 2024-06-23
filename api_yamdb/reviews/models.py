@@ -142,7 +142,7 @@ class BaseTextDateAuthorModel(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='%(class)s_related',
+        related_name='%(class)s',
         verbose_name='Автор'
     )
 
@@ -150,11 +150,14 @@ class BaseTextDateAuthorModel(models.Model):
         abstract = True
         ordering = ('-pub_date',)
 
+    def __str__(self):
+        return self.text[:SLICE_NAME_OBJECT]
+
 
 class Review(BaseTextDateAuthorModel):
     """Модель отзывов."""
     title = models.ForeignKey(
-        'Title',
+        Title,
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='Произведение'
@@ -171,13 +174,10 @@ class Review(BaseTextDateAuthorModel):
         verbose_name_plural = 'Отзывы'
         constraints = [
             models.UniqueConstraint(
-                fields=['author', 'title'],
+                fields=('author', 'title'),
                 name='unique_author_title'
             )
         ]
-
-    def __str__(self):
-        return self.text[:SLICE_NAME_OBJECT]
 
 
 class Comment(BaseTextDateAuthorModel):
@@ -192,6 +192,3 @@ class Comment(BaseTextDateAuthorModel):
     class Meta(BaseTextDateAuthorModel.Meta):
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
-
-    def __str__(self):
-        return self.text[:SLICE_NAME_OBJECT]
