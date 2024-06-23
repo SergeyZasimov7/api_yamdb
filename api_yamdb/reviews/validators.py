@@ -32,9 +32,16 @@ def validate_username(username):
     if invalid_chars:
         invalid_chars_set = set(invalid_chars)
         invalid_chars_str = ', '.join(invalid_chars_set)
-        invalid_count = len(invalid_chars)
-        raise ValidationError(
-            f'Недопустимые символы в имени пользователя: {invalid_chars_str}.'
-            f'Количество недопустимых символов: {invalid_count}.'
-        )
+        if ' ' in invalid_chars_set:
+            raise ValidationError(
+                'Имя пользователя не может содержать'
+                f'пробелы и недопустимые символы: {invalid_chars_str}.'
+            )
+        else:
+            raise ValidationError(
+                f'Недопустимые символы: {invalid_chars_str}.'
+            )
+    # Проверка на наличие пробелов
+    if ' ' in username:
+        raise ValidationError('Имя пользователя не может содержать пробелы.')
     return username
