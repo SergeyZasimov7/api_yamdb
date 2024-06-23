@@ -17,8 +17,8 @@ class IsAdminOrReadOnly(IsAdmin):
 
     def has_permission(self, request, view):
         return (
-            request.method in permissions.SAFE_METHODS or super(
-            ).has_permission(request, view)
+            request.method in permissions.SAFE_METHODS
+            or super().has_permission(request, view)
         )
 
 
@@ -31,8 +31,8 @@ class IsAuthorOrIsAdminIsModeratorOrRead(permissions.BasePermission):
         Метод определяет разрешения на уровне объекта.
         """
         return (
-            request.method in permissions.SAFE_METHODS
-            or obj.author == request.user
+            obj.author == request.user
+            or request.method in permissions.SAFE_METHODS
             or (
                 request.user.is_authenticated and (
                     request.user.is_admin or request.user.is_moderator

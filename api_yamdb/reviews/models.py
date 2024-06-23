@@ -14,7 +14,7 @@ from .constans import (
 
 
 class User(AbstractUser):
-    """Модель для пользователей"""
+    """Модель для пользователя."""
 
     class Role(models.TextChoices):
         USER = 'user'
@@ -84,7 +84,7 @@ class BaseNamedSlugModel(models.Model):
 class Categorie(BaseNamedSlugModel):
     """Модель для категорий."""
 
-    class Meta:
+    class Meta(BaseNamedSlugModel.Meta):
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
@@ -92,7 +92,7 @@ class Categorie(BaseNamedSlugModel):
 class Genre(BaseNamedSlugModel):
     """Модель для жанров."""
 
-    class Meta:
+    class Meta(BaseNamedSlugModel.Meta):
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
@@ -128,7 +128,7 @@ class Title(models.Model):
     )
 
     class Meta:
-        ordering = ['name']
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
@@ -139,22 +139,22 @@ class BaseTextDateModel(models.Model):
     text = models.TextField(verbose_name='Текст')
     pub_date = models.DateTimeField(
         auto_now_add=True, db_index=True, verbose_name='Дата публикации')
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='%(class)s_related',
+        verbose_name='Автор'
+    )
 
     class Meta:
         abstract = True
-        ordering = ('text',)
+        ordering = ('-pub_date',)
 
 
 class Review(BaseTextDateModel):
     """Модель отзывов."""
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='reviews',
-        verbose_name='Автор'
-    )
     title = models.ForeignKey(
-        Title,
+        'Title',
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='Произведение'
@@ -167,6 +167,8 @@ class Review(BaseTextDateModel):
     )
 
     class Meta(BaseTextDateModel.Meta):
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
         constraints = [
             models.UniqueConstraint(
                 fields=['author', 'title'],
@@ -180,15 +182,16 @@ class Review(BaseTextDateModel):
 
 class Comment(BaseTextDateModel):
     """Модель комментариев."""
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='comments',
-        verbose_name='Автор'
-    )
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
         related_name='comments',
         verbose_name='Отзыв'
     )
+
+    class Meta(BaseTextDateModel.Meta):
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+
+    def __str__(self):
+        return self.text[:SLICE_NAME_OBJECT]

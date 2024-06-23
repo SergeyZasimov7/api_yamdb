@@ -56,16 +56,14 @@ class ReadTitleSerializer(serializers.ModelSerializer):
         model = Title
         fields = ('id', 'name', 'year', 'description',
                   'genre', 'category', 'rating')
-        read_only_fields = (fields,)
+        read_only_fields = fields
 
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор для модели User."""
-    username = serializers.CharField(
-        validators=[validate_username],
-        required=True,
-        max_length=NAME_LENGTH
-    )
+
+    def validate_username(self, username):
+        return validate_username(username)
 
     class Meta:
         model = User

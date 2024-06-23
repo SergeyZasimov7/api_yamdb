@@ -5,7 +5,7 @@ from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status, filters, mixins
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import (
@@ -34,7 +34,6 @@ from .serializers import (
     UserSerializer
 )
 from .filters import TitleFilter
-from .mixins import ListCreateDestoyMixins
 
 
 @api_view(['POST'])
@@ -44,7 +43,9 @@ def obtain_token(request):
     serializer = TokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
-    user = User.objects.get(username=serializer.validated_data.get('username'))
+    user = get_object_or_404(
+        username=serializer.validated_data.get('username')
+    )
     return Response({
         'token': str(RefreshToken.for_user(user).access_token)
     }, status=status.HTTP_200_OK)
@@ -143,7 +144,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class BaseEditingKitViewSet(
-    ListCreateDestoyMixins,
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
     """Базовый ViewSet, для перечисления, создания и удаления."""

@@ -16,23 +16,26 @@ def validate_year(year):
     return year
 
 
-def validate_username(named):
+def validate_username(username):
     """
     Пользовательский валидатор для имени пользователя.
     Проверяет, что имя пользователя
     не содержит недопустимых символов и не равно 'me'(USER_PATH).
     """
-    if named == settings.USER_PATH:
-        raise ValidationError('Имя пользователя не может быть "me".')
+    if username == settings.USER_PATH:
+        raise ValidationError(
+            f'Имя пользователя не может быть { settings.USER_PATH}.'
+        )
     # Регулярное выражение для допустимых символов
     regex = r'[\w.@+-]+'
     # Поиск недопустимых символов
-    invalid_chars = set(re.sub(regex, '', named))
+    invalid_chars = re.sub(regex, '', username)
     if invalid_chars:
-        invalid_chars_str = ', '.join(invalid_chars)
+        invalid_chars_set = set(invalid_chars)
+        invalid_chars_str = ', '.join(invalid_chars_set)
+        invalid_count = len(invalid_chars)
         raise ValidationError(
             f'Недопустимые символы в имени пользователя: {invalid_chars_str}.'
+            f'Количество недопустимых символов: {invalid_count}.'
         )
-    if get_user_model().objects.filter(username=named).exists():
-        raise ValidationError('Пользователь с таким именем уже существует.')
-    return named
+    return username
