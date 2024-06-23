@@ -42,7 +42,6 @@ def obtain_token(request):
     """Функция для получения токена."""
     serializer = TokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-
     user = get_object_or_404(
         username=serializer.validated_data.get('username')
     )
@@ -67,18 +66,12 @@ class UserRegistrationView(APIView):
         """Регистрирует нового пользователя."""
         username = request.data.get('username')
         email = request.data.get('email')
-        existing_user = (
-            User.objects.filter(username=username, email=email).first()
-        )
-
-        if existing_user:
-            confirmation_code = generate_confirmation_code()
+        confirmation_code = generate_confirmation_code()
+        self.send_confirmation_email(email, confirmation_code)
+        if User.objects.filter(username=username, email=email).exists():
+            existing_user = User.objects.get(username=username, email=email)
             existing_user.confirmation_code = confirmation_code
             existing_user.save()
-            self.send_confirmation_email(
-                existing_user.email,
-                confirmation_code
-            )
             return Response(
                 {
                     'username': existing_user.username,
@@ -89,9 +82,7 @@ class UserRegistrationView(APIView):
         else:
             serializer = UserSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            confirmation_code = generate_confirmation_code()
             user = serializer.save(confirmation_code=confirmation_code)
-            self.send_confirmation_email(user.email, confirmation_code)
             return Response(
                 {'username': user.username, 'email': user.email},
                 status=status.HTTP_200_OK
@@ -99,11 +90,12 @@ class UserRegistrationView(APIView):
 
     def send_confirmation_email(self, email, confirmation_code):
         """Отправляет email с кодом подтверждения."""
-        subject = 'Код подтверждения регистрации'
-        message = f'Ваш код подтверждения: {confirmation_code}'
-        from_email = settings.USER_EMAIL
-        recipient_list = [email]
-        send_mail(subject, message, from_email, recipient_list)
+        send_mail(
+            'Код подтверждения регистрации',
+            f'Ваш код подтверждения: {confirmation_code}',
+            settings.CONFIRMATION_EMAIL_SENDER,
+            [email]
+        )
 
 
 class UserViewSet(viewsets.ModelViewSet):

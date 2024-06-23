@@ -74,7 +74,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 class TokenSerializer(serializers.Serializer):
     """Сериализатор для токена"""
-    username = serializers.CharField(required=True, max_length=NAME_LENGTH)
+    username = serializers.CharField(
+        required=True,
+        max_length=NAME_LENGTH,
+        validators=[validate_username]
+    )
     confirmation_code = serializers.CharField(
         required=True,
         max_length=settings.CONFIRMATION_CODE_LENGTH,
@@ -95,7 +99,6 @@ class TokenSerializer(serializers.Serializer):
                     "Код подтверждения неверен."
                 )
             user.confirmation_code = None
-        user.save()
         return data
 
 

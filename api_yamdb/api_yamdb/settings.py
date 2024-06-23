@@ -124,9 +124,8 @@ REST_FRAMEWORK = {
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
 
-CONFIRMATION_CODE_LENGTH = 6
+CONFIRMATION_CODE_LENGTH = 10
 CONFIRMATION_CODE_ALLOWED_CHARS = string.ascii_uppercase + string.digits
 
 USER_PATH = 'me'
-USER_EMAIL = 'email@example.com'
-CONFIRMATION_CODE_LENGTH = 10
+CONFIRMATION_EMAIL_SENDER = 'email@example.com'

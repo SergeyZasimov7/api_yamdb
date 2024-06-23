@@ -30,13 +30,12 @@ router_v1.register(
     basename='review-comments'
 )
 
+auth_patterns = [
+    path('token/', obtain_token, name='obtain_token'),
+    path('signup/', UserRegistrationView.as_view(), name='signup'),
+]
+
 urlpatterns = [
-    path('v1/auth/', include([
-        path(
-            'token/',
-            obtain_token, name='obtain_token'
-        ),
-        path('signup/', UserRegistrationView.as_view(), name='signup'),
-    ])),
+    path('v1/auth/', include(auth_patterns)),
     path('v1/', include(router_v1.urls)),
 ]
