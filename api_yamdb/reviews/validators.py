@@ -31,17 +31,8 @@ def validate_username(username):
     invalid_chars = re.sub(regex, '', username)
     if invalid_chars:
         invalid_chars_set = set(invalid_chars)
-        invalid_chars_str = ', '.join(invalid_chars_set)
-        if ' ' in invalid_chars_set:
-            raise ValidationError(
-                'Имя пользователя не может содержать'
-                f'пробелы и недопустимые символы: {invalid_chars_str}.'
-            )
-        else:
-            raise ValidationError(
-                f'Недопустимые символы: {invalid_chars_str}.'
-            )
-    # Проверка на наличие пробелов
-    if ' ' in username:
-        raise ValidationError('Имя пользователя не может содержать пробелы.')
+        invalid_chars_str = ''.join(invalid_chars_set)
+        raise ValidationError(
+            f'Недопустимые символы: {invalid_chars_str}.'
+        )
     return username

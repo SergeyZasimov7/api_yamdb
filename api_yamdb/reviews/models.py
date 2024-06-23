@@ -31,6 +31,7 @@ class User(AbstractUser):
         max_length=settings.CONFIRMATION_CODE_LENGTH,
         blank=True
     )
+    confirmation_attempts = models.IntegerField(default=0)
     email = models.EmailField(
         max_length=EMAIL_LENGTH,
         verbose_name='Почта',
@@ -59,6 +60,9 @@ class User(AbstractUser):
     @property
     def is_moderator(self):
         return self.role == self.Role.MODERATOR
+
+    def get_confirmation_attempts(self):
+        return self.confirmation_attempts
 
 
 class BaseNamedSlugModel(models.Model):

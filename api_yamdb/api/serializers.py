@@ -93,11 +93,18 @@ class TokenSerializer(serializers.Serializer):
         username = data['username']
         confirmation_code = data['confirmation_code']
         user = get_object_or_404(User, username=username)
+        attempts = user.get_confirmation_attempts()
+        if attempts >= 3:
+            raise serializers.ValidationError(
+                "Слишком много попыток. Попробуйте позже."
+            )
         if confirmation_code:
             if user.confirmation_code != confirmation_code:
                 raise serializers.ValidationError(
                     "Код подтверждения неверен."
                 )
+            else:
+                user.reset_confirmation_attempts()
         return data
 
 

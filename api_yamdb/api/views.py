@@ -66,10 +66,8 @@ class UserRegistrationView(APIView):
         """Регистрирует нового пользователя."""
         username = request.data.get('username')
         email = request.data.get('email')
-
         if User.objects.filter(username=username, email=email).exists():
             user = User.objects.get(username=username, email=email)
-            user.save()
         else:
             serializer = UserSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
