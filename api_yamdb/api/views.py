@@ -31,7 +31,8 @@ from .serializers import (
     TokenSerializer,
     ReadTitleSerializer,
     ReviewSerializer,
-    UserSerializer
+    UserSerializer,
+    SignupSerializer
 )
 from .filters import TitleFilter
 
@@ -64,20 +65,17 @@ class UserRegistrationView(APIView):
 
     def post(self, request):
         """Регистрирует нового пользователя."""
-        username = request.data.get('username')
-        email = request.data.get('email')
-        if User.objects.filter(username=username, email=email).exists():
-            user = User.objects.get(username=username, email=email)
-        else:
-            serializer = UserSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            confirmation_code = generate_confirmation_code()
-            self.send_confirmation_email(email, confirmation_code)
-            user = User.objects.create(
-                username=username,
-                email=email,
-                confirmation_code=generate_confirmation_code()
-            )
+        serializer = SignupSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user, _ = User.objects.get_or_create(
+            username=serializer.validated_data.get('username'),
+            email=serializer.validated_data.get('email'),
+            defaults={'confirmation_code': generate_confirmation_code()}
+        )
+        self.send_confirmation_email(
+            serializer.validated_data.get('email'),
+            user.confirmation_code
+        )
         return Response(
             {'username': user.username, 'email': user.email},
             status=status.HTTP_200_OK

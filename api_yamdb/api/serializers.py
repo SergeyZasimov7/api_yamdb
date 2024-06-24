@@ -2,9 +2,15 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
-from reviews.constans import NAME_LENGTH, MIN_SCORE, MAX_SCORE
+from reviews.constans import (
+    NAME_LENGTH,
+    MIN_SCORE,
+    MAX_SCORE,
+    NAME_LENGTH,
+    EMAIL_LENGTH
+)
 from reviews.models import Categorie, Comment, Genre, Title, Review, User
-from reviews.validators import validate_username
+from reviews.validators import validate_username, validate_signup_data
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -70,6 +76,25 @@ class UserSerializer(serializers.ModelSerializer):
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
         )
+
+
+class SignupSerializer(UserSerializer):
+    """Сериализатор для регистрации."""
+
+    username = serializers.CharField(
+        max_length=NAME_LENGTH
+    )
+    email = serializers.EmailField(
+        max_length=EMAIL_LENGTH
+    )
+
+    class Meta:
+        model = User
+        fields = ('username', 'email')
+
+    def validate(self, data):
+        """Вызов отдельного валидатора."""
+        return validate_signup_data(data)
 
 
 class TokenSerializer(serializers.Serializer):

@@ -1,8 +1,10 @@
 import re
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from rest_framework import serializers
 
 
 def validate_year(year):
@@ -36,3 +38,22 @@ def validate_username(username):
             f'Недопустимые символы: {invalid_chars_str}.'
         )
     return username
+
+
+def validate_signup_data(data):
+    """Валидатор для данных регистрации."""
+    username = data.get('username')
+    email = data.get('email')
+    exist_username = get_user_model().objects.filter(
+            username=username
+        ).first()
+    exist_email = get_user_model().objects.filter(
+            email=email
+        ).first()
+    if exist_username and not exist_email or (
+        not exist_username and exist_email
+    ):
+        raise serializers.ValidationError(
+            'username или email должны быть уникальны'
+        )
+    return data
