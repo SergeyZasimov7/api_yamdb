@@ -44,12 +44,8 @@ def validate_signup_data(data):
     """Валидатор для данных регистрации."""
     username = data.get('username')
     email = data.get('email')
-    exist_username = get_user_model().objects.filter(
-            username=username
-        ).first()
-    exist_email = get_user_model().objects.filter(
-            email=email
-        ).first()
+    exist_username = get_user_model().objects.filter(username=username).first()
+    exist_email = get_user_model().objects.filter(email=email).first()
     if exist_username and not exist_email or (
         not exist_username and exist_email
     ):
