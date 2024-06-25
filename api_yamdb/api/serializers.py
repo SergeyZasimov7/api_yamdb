@@ -1,4 +1,7 @@
+import random
+
 from django.conf import settings
+from django.core.validators import RegexValidator
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
@@ -10,7 +13,7 @@ from reviews.constans import (
     EMAIL_LENGTH
 )
 from reviews.models import Categorie, Comment, Genre, Title, Review, User
-from reviews.validators import validate_username, validate_signup_data
+from reviews.validators import validate_username
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -78,24 +81,28 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
 
-class SignupSerializer(UserSerializer):
+class SignupSerializer(serializers.ModelSerializer):
     """Сериализатор для регистрации."""
 
     username = serializers.CharField(
-        max_length=NAME_LENGTH
+        max_length=NAME_LENGTH,
+        required=True,
+        validators=[RegexValidator(regex=r'^[\w.@+-]+\Z'),
+                    ]
     )
     email = serializers.EmailField(
-        max_length=EMAIL_LENGTH
+        max_length=EMAIL_LENGTH,
+        required=True,
     )
-
+    
     class Meta:
         model = User
         fields = ('username', 'email')
-
-    def validate(self, data):
-        """Вызов отдельного валидатора."""
-        return validate_signup_data(data)
-
+    
+    def validate_username(self, value):
+        if value == "me":
+            raise serializers.ValidationError("Имя пользователя не может быть 'me'.")
+        return value
 
 class TokenSerializer(serializers.Serializer):
     """Сериализатор для токена"""
@@ -106,8 +113,7 @@ class TokenSerializer(serializers.Serializer):
     )
     confirmation_code = serializers.CharField(
         required=True,
-        max_length=settings.CONFIRMATION_CODE_LENGTH,
-        allow_null=True
+        max_length=settings.CONFIRMATION_CODE_LENGTH
     )
 
     def validate(self, data):
@@ -118,19 +124,22 @@ class TokenSerializer(serializers.Serializer):
         username = data['username']
         confirmation_code = data['confirmation_code']
         user = get_object_or_404(User, username=username)
-        attempts = user.get_confirmation_attempts()
-        if attempts >= 3:
-            raise serializers.ValidationError(
-                "Слишком много попыток. Попробуйте позже."
-            )
         if confirmation_code:
             if user.confirmation_code != confirmation_code:
+                new_code = generate_confirmation_code()
+                user.confirmation_code = new_code
+                user.save()
                 raise serializers.ValidationError(
                     "Код подтверждения неверен."
                 )
-            else:
-                user.reset_confirmation_attempts()
         return data
+
+def generate_confirmation_code():
+    """Генерация кода подтверждения заданной длины."""
+    return ''.join(random.choices(
+        settings.CONFIRMATION_CODE_ALLOWED_CHARS,
+        k=settings.CONFIRMATION_CODE_LENGTH
+    ))
 
 
 class ReviewSerializer(serializers.ModelSerializer):
