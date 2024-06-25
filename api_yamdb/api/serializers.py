@@ -94,15 +94,18 @@ class SignupSerializer(serializers.ModelSerializer):
         max_length=EMAIL_LENGTH,
         required=True,
     )
-    
+
     class Meta:
         model = User
         fields = ('username', 'email')
-    
+
     def validate_username(self, value):
         if value == "me":
-            raise serializers.ValidationError("Имя пользователя не может быть 'me'.")
+            raise serializers.ValidationError(
+                "Имя пользователя не может быть 'me'."
+            )
         return value
+
 
 class TokenSerializer(serializers.Serializer):
     """Сериализатор для токена"""
@@ -133,6 +136,7 @@ class TokenSerializer(serializers.Serializer):
                     "Код подтверждения неверен."
                 )
         return data
+
 
 def generate_confirmation_code():
     """Генерация кода подтверждения заданной длины."""
