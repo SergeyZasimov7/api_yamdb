@@ -1,10 +1,12 @@
+import random
+
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, status, filters, mixins
+from rest_framework import viewsets, status, filters, mixins, serializers
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import (
@@ -31,8 +33,7 @@ from .serializers import (
     ReadTitleSerializer,
     ReviewSerializer,
     UserSerializer,
-    SignupSerializer,
-    generate_confirmation_code
+    SignupSerializer
 )
 from .filters import TitleFilter
 
@@ -51,6 +52,14 @@ def obtain_token(request):
     }, status=status.HTTP_200_OK)
 
 
+def generate_confirmation_code():
+    """Генерация кода подтверждения заданной длины."""
+    return ''.join(random.choices(
+        settings.CONFIRMATION_CODE_ALLOWED_CHARS,
+        k=settings.CONFIRMATION_CODE_LENGTH
+    ))
+
+
 class UserRegistrationView(APIView):
     """View для регистрации нового пользователя."""
     permission_classes = [AllowAny]
@@ -67,19 +76,10 @@ class UserRegistrationView(APIView):
                 email=email
             )
         except IntegrityError:
-            if User.objects.filter(username=username).exists():
-                return Response(
-                    {'error': 'Username уже занят'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            if User.objects.filter(email=email).exists():
-                return Response(
-                    {'error': 'Email уже занят'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            return Response(
-                {'error': 'Невозможно создать пользователя с такими данными'},
-                status=status.HTTP_400_BAD_REQUEST
+            raise serializers.ValidationError(
+                {'error': 'Username уже занят'}
+                if User.objects.filter(username=username).exists()
+                else {'error': 'Email уже занят'}
             )
         user.confirmation_code = generate_confirmation_code()
         user.save()
@@ -92,7 +92,8 @@ class UserRegistrationView(APIView):
             status=status.HTTP_200_OK
         )
 
-    def send_confirmation_email(self, email, confirmation_code):
+    @staticmethod
+    def send_confirmation_email(email, confirmation_code):
         """Отправляет email с кодом подтверждения."""
         send_mail(
             'Код подтверждения регистрации',

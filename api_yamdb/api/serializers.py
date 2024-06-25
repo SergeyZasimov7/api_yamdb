@@ -1,7 +1,4 @@
-import random
-
 from django.conf import settings
-from django.core.validators import RegexValidator
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
@@ -81,30 +78,18 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
 
-class SignupSerializer(serializers.ModelSerializer):
+class SignupSerializer(serializers.Serializer):
     """Сериализатор для регистрации."""
 
     username = serializers.CharField(
         max_length=NAME_LENGTH,
         required=True,
-        validators=[RegexValidator(regex=r'^[\w.@+-]+\Z'),
-                    ]
+        validators=[validate_username]
     )
     email = serializers.EmailField(
         max_length=EMAIL_LENGTH,
         required=True,
     )
-
-    class Meta:
-        model = User
-        fields = ('username', 'email')
-
-    def validate_username(self, value):
-        if value == "me":
-            raise serializers.ValidationError(
-                "Имя пользователя не может быть 'me'."
-            )
-        return value
 
 
 class TokenSerializer(serializers.Serializer):
@@ -127,23 +112,13 @@ class TokenSerializer(serializers.Serializer):
         username = data['username']
         confirmation_code = data['confirmation_code']
         user = get_object_or_404(User, username=username)
-        if confirmation_code:
-            if user.confirmation_code != confirmation_code:
-                new_code = generate_confirmation_code()
-                user.confirmation_code = new_code
-                user.save()
-                raise serializers.ValidationError(
-                    "Код подтверждения неверен."
-                )
+        if user.confirmation_code != confirmation_code:
+            user.confirmation_code = settings.INVALID_CONFIRMATION_CODE
+            user.save()
+            raise serializers.ValidationError(
+                "Код подтверждения неверен."
+            )
         return data
-
-
-def generate_confirmation_code():
-    """Генерация кода подтверждения заданной длины."""
-    return ''.join(random.choices(
-        settings.CONFIRMATION_CODE_ALLOWED_CHARS,
-        k=settings.CONFIRMATION_CODE_LENGTH
-    ))
 
 
 class ReviewSerializer(serializers.ModelSerializer):
